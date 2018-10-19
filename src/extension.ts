@@ -7,7 +7,7 @@ class ReferenceSearchModel {
     private _resolve: Promise<this> | undefined;
 
     constructor(
-        readonly document: vscode.TextDocument,
+        readonly uri: vscode.Uri,
         readonly position: vscode.Position,
         readonly items = new Set<FileItem>()
     ) {
@@ -29,7 +29,7 @@ class ReferenceSearchModel {
         this.items.clear();
         const locations = await vscode.commands.executeCommand<vscode.Location[]>(
             'vscode.executeReferenceProvider',
-            this.document.uri,
+            this.uri,
             this.position
         );
         if (locations) {
@@ -37,7 +37,7 @@ class ReferenceSearchModel {
             locations.sort(ReferenceSearchModel._compareLocations);
             for (const loc of locations) {
                 if (!last || last.uri.toString() !== loc.uri.toString()) {
-                    last = new FileItem(loc.uri, new Set(), loc.uri.toString() === this.document.uri.toString());
+                    last = new FileItem(loc.uri, new Set(), loc.uri.toString() === this.uri.toString());
                     this.items.add(last);
                 }
                 last.results.add(new ReferenceItem(loc, last));
@@ -174,7 +174,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const findCommand = async (editor: vscode.TextEditor) => {
         if (editor.document.getWordRangeAtPosition(editor.selection.active)) {
-            const model = new ReferenceSearchModel(editor.document, editor.selection.active);
+            const model = new ReferenceSearchModel(editor.document.uri, editor.selection.active);
             treeDataProvider.setModel(model);
             await model.resolve
             for (const item of model.items) {
