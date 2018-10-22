@@ -1,127 +1,148 @@
 {
-    "name": "references-view",
-    "displayName": "references-view",
-    "description": "Show find references result as dedicated view",
-    "version": "0.0.1",
-    "publisher": "ms-vscode",
-    "engines": {
-        "vscode": "^1.28.0"
-    },
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/Microsoft/vscode-reference-view"
-    },
-    "bugs": {
-        "url": "https://github.com/Microsoft/vscode-reference-view/issues"
-    },
-    "categories": [
-        "Programming Languages"
-    ],
-    "activationEvents": [
-        "onCommand:references-view.find",
-        "onView:references-view.tree"
-    ],
-    "main": "./out/src/extension",
-    "contributes": {
-        "viewsContainers": {
-            "activitybar": [
-                {
-                    "id": "references-view",
-                    "icon": "./media/container-icon.svg",
-                    "title": "Reference Search"
-                }
-            ]
-        },
-        "views": {
-            "references-view": [
-                {
-                    "id": "references-view.tree",
-                    "name": "Results"
-                }
-            ]
-        },
-        "commands": [
-            {
-                "command": "references-view.find",
-                "title": "List All References",
-                "category": "References"
-            },
-            {
-                "command": "references-view.clear",
-                "title": "Clear Reference Results",
-                "category": "References",
-                "icon": {
-                    "dark": "./media/action-clear-dark.svg",
-                    "light": "./media/action-clear.svg"
-                }
-            },
-            {
-                "command": "references-view.refresh",
-                "title": "Refresh Reference Results",
-                "category": "References",
-                "icon": {
-                    "dark": "./media/action-refresh-dark.svg",
-                    "light": "./media/action-refresh.svg"
-                }
-            },
-            {
-                "command": "references-view.remove",
-                "title": "Remove Reference from List",
-                "icon": {
-                    "dark": "./media/action-remove-dark.svg",
-                    "light": "./media/action-remove.svg"
-                }
-            }
-        ],
-        "menus": {
-            "editor/context": [
-                {
-                    "command": "references-view.find",
-                    "when": "editorHasReferenceProvider",
-                    "group": "navigation@1.51"
-                }
-            ],
-            "view/title": [
-                {
-                    "command": "references-view.refresh",
-                    "group": "navigation",
-                    "when": "view == references-view.tree && reference-list.hasResult"
-                },
-                {
-                    "command": "references-view.clear",
-                    "group": "navigation",
-                    "when": "view == references-view.tree && reference-list.hasResult"
-                }
-            ],
-            "view/item/context": [
-                {
-                    "command": "references-view.remove",
-                    "group": "inline",
-                    "when": "view == references-view.tree && viewItem == reference-item"
-                }
-            ],
-            "commandPalette": [
-                {
-                    "command": "references-view.remove",
-                    "when": "never"
-                }
-            ]
-        },
-        "keybindings": {
-            "command": "references-view.find",
-            "when": "editorHasReferenceProvider",
-            "key": "shift+alt+f12"
+  "name": "references-view",
+  "displayName": "references-view",
+  "description": "Show find references result as dedicated view",
+  "version": "0.0.1",
+  "publisher": "ms-vscode",
+  "engines": {
+    "vscode": "^1.28.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Microsoft/vscode-reference-view"
+  },
+  "bugs": {
+    "url": "https://github.com/Microsoft/vscode-reference-view/issues"
+  },
+  "categories": [
+    "Programming Languages"
+  ],
+  "activationEvents": [
+    "onCommand:references-view.find",
+    "onView:references-view.tree"
+  ],
+  "main": "./out/src/extension",
+  "contributes": {
+    "configuration": {
+      "properties": {
+        "reference-view.location": {
+          "description": "Defines where the reference view shows, as separate view or inside the Explorer",
+          "default": "referenceView",
+          "enum": [
+            "explorer",
+            "referenceView"
+          ]
         }
+      }
     },
-    "scripts": {
-        "vscode:prepublish": "npm run compile",
-        "compile": "tsc -p ./",
-        "watch": "tsc -watch -p ./",
-        "postinstall": "node ./node_modules/vscode/bin/install"
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "references-view",
+          "icon": "./media/container-icon.svg",
+          "title": "Reference Search",
+          "when": "config.reference-view.location == referenceView"
+        }
+      ]
     },
-    "devDependencies": {
-        "typescript": "^2.5.2",
-        "vscode": "^1.1.5",
-        "@types/node": "^7.0.43"
+    "views": {
+      "references-view": [
+        {
+          "id": "references-view.tree",
+          "name": "Results",
+          "when": "config.reference-view.location == referenceView"
+        }
+      ],
+      "explorer": [
+        {
+          "id": "references-view.tree",
+          "name": "Find References",
+          "when": "config.reference-view.location == explorer"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "references-view.find",
+        "title": "List All References",
+        "category": "References"
+      },
+      {
+        "command": "references-view.clear",
+        "title": "Clear Reference Results",
+        "category": "References",
+        "icon": {
+          "dark": "./media/action-clear-dark.svg",
+          "light": "./media/action-clear.svg"
+        }
+      },
+      {
+        "command": "references-view.refresh",
+        "title": "Refresh Reference Results",
+        "category": "References",
+        "icon": {
+          "dark": "./media/action-refresh-dark.svg",
+          "light": "./media/action-refresh.svg"
+        }
+      },
+      {
+        "command": "references-view.remove",
+        "title": "Remove Reference from List",
+        "icon": {
+          "dark": "./media/action-remove-dark.svg",
+          "light": "./media/action-remove.svg"
+        }
+      }
+    ],
+    "menus": {
+      "editor/context": [
+        {
+          "command": "references-view.find",
+          "when": "editorHasReferenceProvider",
+          "group": "navigation@1.51"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "references-view.refresh",
+          "group": "navigation",
+          "when": "view == references-view.tree && reference-list.hasResult"
+        },
+        {
+          "command": "references-view.clear",
+          "group": "navigation",
+          "when": "view == references-view.tree && reference-list.hasResult"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "references-view.remove",
+          "group": "inline",
+          "when": "view == references-view.tree && viewItem == reference-item"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "references-view.remove",
+          "when": "never"
+        }
+      ]
+    },
+    "keybindings": {
+      "command": "references-view.find",
+      "when": "editorHasReferenceProvider",
+      "key": "shift+alt+f12"
     }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "postinstall": "node ./node_modules/vscode/bin/install"
+  },
+  "devDependencies": {
+    "typescript": "^2.5.2",
+    "vscode": "^1.1.5",
+    "@types/node": "^7.0.43"
+  }
 }
