@@ -180,6 +180,7 @@ export function activate(context: vscode.ExtensionContext) {
             for (const item of model.items) {
                 if (item.isFileOfRequest) {
                     view.reveal(item, { select: true, focus: true });
+                    // vscode.commands.executeCommand('references-view.tree.focus');
                 }
             }
         }
