@@ -29,5 +29,4 @@ Initial release of the extension.
 
 ### 0.0.2
 
-* Have view inside explorer or reference view
 * Navigation commands `F4` and `Shift+F4`

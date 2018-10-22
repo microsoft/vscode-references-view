@@ -23,25 +23,12 @@
   ],
   "main": "./out/src/extension",
   "contributes": {
-    "configuration": {
-      "properties": {
-        "reference-view.location": {
-          "description": "Defines where the reference view shows, as separate view or inside the Explorer",
-          "default": "referenceView",
-          "enum": [
-            "explorer",
-            "referenceView"
-          ]
-        }
-      }
-    },
     "viewsContainers": {
       "activitybar": [
         {
           "id": "references-view",
           "icon": "./media/container-icon.svg",
-          "title": "Reference Search",
-          "when": "config.reference-view.location == referenceView"
+          "title": "Reference Search"
         }
       ]
     },
@@ -49,15 +36,7 @@
       "references-view": [
         {
           "id": "references-view.tree",
-          "name": "Results",
-          "when": "config.reference-view.location == referenceView"
-        }
-      ],
-      "explorer": [
-        {
-          "id": "references-view.tree",
-          "name": "Find References",
-          "when": "config.reference-view.location == explorer"
+          "name": "Results"
         }
       ]
     },
