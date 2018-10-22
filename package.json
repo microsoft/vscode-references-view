@@ -2,7 +2,7 @@
   "name": "references-view",
   "displayName": "references-view",
   "description": "Show find references result as dedicated view",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "publisher": "ms-vscode",
   "engines": {
     "vscode": "^1.28.0"
