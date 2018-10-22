@@ -26,3 +26,8 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 ### 0.0.1
 
 Initial release of the extension.
+
+### 0.0.2
+
+* Have view inside explorer or reference view
+* Navigation commands `F4` and `Shift+F4`
