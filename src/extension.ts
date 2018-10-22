@@ -2,6 +2,23 @@
 
 import * as vscode from 'vscode';
 
+class FileItem {
+    constructor(
+        readonly uri: vscode.Uri,
+        readonly results: Array<ReferenceItem>,
+        readonly isFileOfRequest: boolean
+    ) { }
+}
+
+class ReferenceItem {
+    constructor(
+        readonly location: vscode.Location,
+        readonly parent: FileItem,
+    ) { }
+}
+
+type TreeObject = FileItem | ReferenceItem;
+
 class ReferenceSearchModel {
 
     private _resolve: Promise<this> | undefined;
@@ -9,7 +26,7 @@ class ReferenceSearchModel {
     constructor(
         readonly uri: vscode.Uri,
         readonly position: vscode.Position,
-        readonly items = new Set<FileItem>()
+        readonly items = new Array<FileItem>()
     ) {
         //
     }
@@ -26,7 +43,7 @@ class ReferenceSearchModel {
     }
 
     private async _doResolve(): Promise<this> {
-        this.items.clear();
+        this.items.length = 0
         const locations = await vscode.commands.executeCommand<vscode.Location[]>(
             'vscode.executeReferenceProvider',
             this.uri,
@@ -37,10 +54,10 @@ class ReferenceSearchModel {
             locations.sort(ReferenceSearchModel._compareLocations);
             for (const loc of locations) {
                 if (!last || last.uri.toString() !== loc.uri.toString()) {
-                    last = new FileItem(loc.uri, new Set(), loc.uri.toString() === this.uri.toString());
-                    this.items.add(last);
+                    last = new FileItem(loc.uri, [], loc.uri.toString() === this.uri.toString());
+                    this.items.push(last);
                 }
-                last.results.add(new ReferenceItem(loc, last));
+                last.results.push(new ReferenceItem(loc, last));
             }
         }
         return this;
@@ -48,15 +65,45 @@ class ReferenceSearchModel {
 
     remove(item: FileItem | ReferenceItem): FileItem | undefined {
         if (item instanceof FileItem) {
-            this.items.delete(item);
+            ReferenceSearchModel._del(this.items, item);
             return undefined;
+
         } else if (item instanceof ReferenceItem) {
-            item.parent.results.delete(item);
-            if (item.parent.results.size === 0) {
-                this.items.delete(item.parent);
+            ReferenceSearchModel._del(item.parent.results, item);
+            if (item.parent.results.length === 0) {
+                ReferenceSearchModel._del(this.items, item.parent);
                 return undefined;
             } else {
                 return item.parent;
+            }
+        }
+    }
+
+    move(item: FileItem | ReferenceItem, fwd: boolean): ReferenceItem | undefined {
+
+        const delta = fwd ? +1 : -1;
+
+        const _move = (item: FileItem): FileItem => {
+            const idx = (this.items.indexOf(item) + delta + this.items.length) % this.items.length;
+            return this.items[idx];
+        }
+
+        if (item instanceof FileItem) {
+            if (fwd) {
+                return item.results[0];
+            } else {
+                return ReferenceSearchModel._tail(_move(item).results);
+            }
+        }
+
+        if (item instanceof ReferenceItem) {
+            const idx = item.parent.results.indexOf(item) + delta;
+            if (idx < 0) {
+                return ReferenceSearchModel._tail(_move(item.parent).results);
+            } else if (idx >= item.parent.results.length) {
+                return _move(item.parent).results[0];
+            } else {
+                return item.parent.results[idx];
             }
         }
     }
@@ -74,24 +121,18 @@ class ReferenceSearchModel {
             return 0;
         }
     }
-}
 
-class FileItem {
-    constructor(
-        readonly uri: vscode.Uri,
-        readonly results: Set<ReferenceItem>,
-        readonly isFileOfRequest: boolean
-    ) { }
-}
+    private static _del<T>(array: T[], e: T): void {
+        const idx = array.indexOf(e);
+        if (idx >= 0) {
+            array.splice(idx, 1);
+        }
+    }
 
-class ReferenceItem {
-    constructor(
-        readonly location: vscode.Location,
-        readonly parent: FileItem,
-    ) { }
+    private static _tail<T>(array: T[]): T | undefined {
+        return array[array.length - 1];
+    }
 }
-
-type TreeObject = FileItem | ReferenceItem;
 
 class DataProvider implements vscode.TreeDataProvider<TreeObject> {
 
@@ -152,9 +193,9 @@ class DataProvider implements vscode.TreeDataProvider<TreeObject> {
 
     async getChildren(element?: TreeObject | undefined): Promise<TreeObject[]> {
         if (element instanceof FileItem) {
-            return [...element.results];
+            return element.results;
         } else if (this._model) {
-            return [...(await this._model.resolve).items];
+            return (await this._model.resolve).items;
         } else {
             return [];
         }
@@ -180,7 +221,6 @@ export function activate(context: vscode.ExtensionContext) {
             for (const item of model.items) {
                 if (item.isFileOfRequest) {
                     view.reveal(item, { select: true, focus: true });
-                    // vscode.commands.executeCommand('references-view.tree.focus');
                 }
             }
         }
@@ -213,6 +253,19 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
+    const moveCommand = (fwd: boolean) => {
+        const model = treeDataProvider.getModel();
+        const selection = view.selection[0];
+        if (!model) {
+            return;
+        }
+        const next = model.move(selection, fwd);
+        if (next) {
+            view.reveal(next, { select: true });
+            showRefCommand(next);
+        }
+    }
+
     context.subscriptions.push(
         view,
         vscode.commands.registerTextEditorCommand('references-view.find', findCommand),
@@ -220,5 +273,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerTextEditorCommand('references-view.clear', clearCommand),
         vscode.commands.registerCommand('references-view.show', showRefCommand),
         vscode.commands.registerCommand('references-view.remove', removeRefCommand),
+        vscode.commands.registerCommand('references-view.showNextReference', () => moveCommand(true)),
+        vscode.commands.registerCommand('references-view.showPrevReference', () => moveCommand(false)),
     );
 }

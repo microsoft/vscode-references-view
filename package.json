@@ -128,11 +128,23 @@
         }
       ]
     },
-    "keybindings": {
-      "command": "references-view.find",
-      "when": "editorHasReferenceProvider",
-      "key": "shift+alt+f12"
-    }
+    "keybindings": [
+      {
+        "command": "references-view.find",
+        "when": "editorHasReferenceProvider",
+        "key": "shift+alt+f12"
+      },
+      {
+        "command": "references-view.showNextReference",
+        "when": "reference-list.hasResult",
+        "key": "f4"
+      },
+      {
+        "command": "references-view.showPrevReference",
+        "when": "reference-list.hasResult",
+        "key": "shift+f4"
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
