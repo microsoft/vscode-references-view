@@ -218,9 +218,12 @@ export function activate(context: vscode.ExtensionContext) {
             const model = new ReferenceSearchModel(editor.document.uri, editor.selection.active);
             treeDataProvider.setModel(model);
             await model.resolve
+
+            // reveal first match
             for (const item of model.items) {
                 if (item.isFileOfRequest) {
-                    view.reveal(item, { select: true, focus: true });
+                    view.reveal(item.results[0], { select: true, focus: true });
+                    break;
                 }
             }
         }
