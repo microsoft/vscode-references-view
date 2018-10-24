@@ -167,8 +167,8 @@ class DataProvider implements vscode.TreeDataProvider<TreeObject> {
     async getTreeItem(element: TreeObject): Promise<vscode.TreeItem> {
 
         if (element instanceof FileItem) {
-            let result: vscode.TreeItem;
-            result = new vscode.TreeItem(element.uri);
+            // files
+            const result = new vscode.TreeItem(element.uri);
             result.contextValue = 'reference-item'
             result.iconPath = vscode.ThemeIcon.File;
             result.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
@@ -176,27 +176,23 @@ class DataProvider implements vscode.TreeDataProvider<TreeObject> {
         }
 
         if (element instanceof ReferenceItem) {
+            // references
             const { range } = element.location;
             const doc = await vscode.workspace.openTextDocument(element.location.uri);
 
-            let previewEnd = range.end.translate(0, 31);
-            let previewStart = range.start.with({ character: Math.max(0, range.start.character - 8) });
-            let wordRange = doc.getWordRangeAtPosition(previewStart);
-            if (wordRange) {
-                previewStart = wordRange.start;
-            }
+            const previewStart = range.start.with({ character: Math.max(0, range.start.character - 8) });
+            const wordRange = doc.getWordRangeAtPosition(previewStart);
+            const before = doc.getText(new vscode.Range(wordRange ? wordRange.start : previewStart, range.start));
+            const inside = doc.getText(range);
+            const previewEnd = range.end.translate(0, 31);
+            const after = doc.getText(new vscode.Range(range.end, previewEnd))
 
-            let before = doc.getText(new vscode.Range(previewStart, range.start));
-            let inside = doc.getText(range);
-            let after = doc.getText(new vscode.Range(range.end, previewEnd))
-
-            let label: vscode.TreeItemLabel = {
+            const label: vscode.TreeItemLabel = {
                 label: before + inside + after,
                 highlights: [[before.length, before.length + inside.length]]
             };
 
-            let result: vscode.TreeItem;
-            result = new vscode.TreeItem2(label);
+            const result = new vscode.TreeItem2(label);
             result.collapsibleState = vscode.TreeItemCollapsibleState.None;
             result.contextValue = 'reference-item'
             result.command = {
