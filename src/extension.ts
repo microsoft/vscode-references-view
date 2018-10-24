@@ -5,8 +5,7 @@ import * as vscode from 'vscode';
 class FileItem {
     constructor(
         readonly uri: vscode.Uri,
-        readonly results: Array<ReferenceItem>,
-        readonly isFileOfRequest: boolean
+        readonly results: Array<ReferenceItem>
     ) { }
 }
 
@@ -54,13 +53,27 @@ class ReferenceSearchModel {
             locations.sort(ReferenceSearchModel._compareLocations);
             for (const loc of locations) {
                 if (!last || last.uri.toString() !== loc.uri.toString()) {
-                    last = new FileItem(loc.uri, [], loc.uri.toString() === this.uri.toString());
+                    last = new FileItem(loc.uri, []);
                     this.items.push(last);
                 }
                 last.results.push(new ReferenceItem(loc, last));
             }
         }
         return this;
+    }
+
+    first(): ReferenceItem | undefined {
+        for (const item of this.items) {
+            if (item.uri.toString() === this.uri.toString()) {
+                for (const ref of item.results) {
+                    if (ref.location.range.contains(this.position)) {
+                        return ref;
+                    }
+                }
+                return undefined;
+            }
+        }
+        return undefined;
     }
 
     remove(item: FileItem | ReferenceItem): FileItem | undefined {
@@ -113,7 +126,7 @@ class ReferenceSearchModel {
             return -1;
         } else if (a.uri.toString() > b.uri.toString()) {
             return 1;
-        } else if (a.range.start.isBeforeOrEqual(b.range.start)) {
+        } else if (a.range.start.isBefore(b.range.start)) {
             return -1;
         } else if (a.range.start.isAfter(b.range.start)) {
             return 1;
@@ -158,9 +171,7 @@ class DataProvider implements vscode.TreeDataProvider<TreeObject> {
             result = new vscode.TreeItem(element.uri);
             result.contextValue = 'reference-item'
             result.iconPath = vscode.ThemeIcon.File;
-            result.collapsibleState = element.isFileOfRequest
-                ? vscode.TreeItemCollapsibleState.Expanded
-                : vscode.TreeItemCollapsibleState.Collapsed;
+            result.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
             return result;
         }
 
@@ -175,9 +186,17 @@ class DataProvider implements vscode.TreeDataProvider<TreeObject> {
                 previewStart = wordRange.start;
             }
 
-            let label = `${doc.getText(new vscode.Range(previewStart, range.start))}'${doc.getText(range)}'${doc.getText(new vscode.Range(range.end, previewEnd))}`;
+            let before = doc.getText(new vscode.Range(previewStart, range.start));
+            let inside = doc.getText(range);
+            let after = doc.getText(new vscode.Range(range.end, previewEnd))
+
+            let label: vscode.TreeItemLabel = {
+                label: before + inside + after,
+                highlights: [[before.length, before.length + inside.length]]
+            };
+
             let result: vscode.TreeItem;
-            result = new vscode.TreeItem(label.trim());
+            result = new vscode.TreeItem2(label);
             result.collapsibleState = vscode.TreeItemCollapsibleState.None;
             result.contextValue = 'reference-item'
             result.command = {
@@ -216,15 +235,13 @@ export function activate(context: vscode.ExtensionContext) {
     const findCommand = async (editor: vscode.TextEditor) => {
         if (editor.document.getWordRangeAtPosition(editor.selection.active)) {
             const model = new ReferenceSearchModel(editor.document.uri, editor.selection.active);
-            treeDataProvider.setModel(model);
-            await model.resolve
 
-            // reveal first match
-            for (const item of model.items) {
-                if (item.isFileOfRequest) {
-                    view.reveal(item.results[0], { select: true, focus: true });
-                    break;
-                }
+            treeDataProvider.setModel(model);
+
+            await model.resolve
+            const selection = model.first();
+            if (selection) {
+                view.reveal(selection, { select: true, focus: true });
             }
         }
     };
@@ -258,10 +275,10 @@ export function activate(context: vscode.ExtensionContext) {
 
     const moveCommand = (fwd: boolean) => {
         const model = treeDataProvider.getModel();
-        const selection = view.selection[0];
         if (!model) {
             return;
         }
+        const selection = view.selection[0] || model.first();
         const next = model.move(selection, fwd);
         if (next) {
             view.reveal(next, { select: true });
