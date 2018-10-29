@@ -62,6 +62,15 @@ class ReferenceSearchModel {
         return this;
     }
 
+    get(uri: vscode.Uri): FileItem | undefined {
+        for (const item of this.items) {
+            if (item.uri.toString() === uri.toString()) {
+                return item;
+            }
+        }
+        return undefined;
+    }
+
     first(): ReferenceItem | undefined {
         for (const item of this.items) {
             if (item.uri.toString() === this.uri.toString()) {
@@ -228,13 +237,48 @@ export function activate(context: vscode.ExtensionContext) {
     const treeDataProvider = new DataProvider();
     const view = vscode.window.createTreeView('references-view.tree', { treeDataProvider });
 
+    const editorHighlights = new class {
+
+        private _decorationType = vscode.window.createTextEditorDecorationType({
+            backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground')
+        });
+
+        private _editorListener = vscode.window.onDidChangeActiveTextEditor(this.highlight, this);
+
+        dispose() {
+            this.clear();
+            this._editorListener.dispose();
+        }
+
+        highlight() {
+            const { activeTextEditor: editor } = vscode.window;
+            const model = treeDataProvider.getModel();
+            if (!editor || !model) {
+                return;
+            }
+            const item = model.get(editor.document.uri);
+            if (item) {
+                editor.setDecorations(this._decorationType, item.results.map(ref => ref.location.range));
+            }
+        }
+
+        clear() {
+            const { activeTextEditor: editor } = vscode.window;
+            if (editor) {
+                editor.setDecorations(this._decorationType, []);
+            }
+        }
+    }
+
     const findCommand = async (editor: vscode.TextEditor) => {
+        editorHighlights.clear();
         if (editor.document.getWordRangeAtPosition(editor.selection.active)) {
             const model = new ReferenceSearchModel(editor.document.uri, editor.selection.active);
 
             treeDataProvider.setModel(model);
 
             await model.resolve
+            editorHighlights.highlight();
             const selection = model.first();
             if (selection) {
                 view.reveal(selection, { select: true, focus: true });
@@ -251,13 +295,14 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const clearCommand = () => {
+        editorHighlights.clear();
         treeDataProvider.setModel(undefined);
     }
 
     const showRefCommand = (arg?: ReferenceItem | any) => {
         if (arg instanceof ReferenceItem) {
             const { location } = arg;
-            vscode.window.showTextDocument(location.uri, { selection: location.range });
+            vscode.window.showTextDocument(location.uri, { selection: location.range.with({ end: location.range.start }) });
         }
     };
 
@@ -284,6 +329,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     context.subscriptions.push(
         view,
+        editorHighlights,
         vscode.commands.registerTextEditorCommand('references-view.find', findCommand),
         vscode.commands.registerTextEditorCommand('references-view.refresh', refreshCommand),
         vscode.commands.registerTextEditorCommand('references-view.clear', clearCommand),
