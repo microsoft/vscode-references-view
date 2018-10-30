@@ -109,6 +109,14 @@
         {
           "command": "references-view.find",
           "when": "editorHasReferenceProvider"
+        },
+        {
+          "command": "references-view.clear",
+          "when": "reference-list.hasResult"
+        },
+        {
+          "command": "references-view.refresh",
+          "when": "reference-list.hasResult"
         }
       ]
     },
