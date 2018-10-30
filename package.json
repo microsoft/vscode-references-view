@@ -105,6 +105,10 @@
         {
           "command": "references-view.remove",
           "when": "never"
+        },
+        {
+          "command": "references-view.find",
+          "when": "editorHasReferenceProvider"
         }
       ]
     },
