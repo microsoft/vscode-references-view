@@ -17,6 +17,7 @@
   "categories": [
     "Programming Languages"
   ],
+  "enableProposedApi": true,
   "activationEvents": [
     "onCommand:references-view.find",
     "onView:references-view.tree"
