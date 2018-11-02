@@ -235,7 +235,10 @@ class DataProvider implements vscode.TreeDataProvider<TreeObject> {
 export function activate(context: vscode.ExtensionContext) {
 
     const treeDataProvider = new DataProvider();
-    const view = vscode.window.createTreeView('references-view.tree', { treeDataProvider });
+    const view = vscode.window.createTreeView('references-view.tree', {
+        treeDataProvider,
+        showCollapseAll: true
+    });
 
     const editorHighlights = new class {
 
