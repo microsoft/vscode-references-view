@@ -312,8 +312,12 @@ export function activate(context: vscode.ExtensionContext) {
     const removeRefCommand = (arg?: ReferenceItem | any) => {
         const model = treeDataProvider.getModel();
         if (model) {
+            const next = model.move(arg, true);
             const parent = model.remove(arg);
             treeDataProvider._onDidChangeTreeData.fire(parent);
+            if (next) {
+                view.reveal(next, { select: true });
+            }
         }
     };
 
