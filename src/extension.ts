@@ -294,6 +294,7 @@ export function activate(context: vscode.ExtensionContext) {
         if (model) {
             model.reset();
             treeDataProvider._onDidChangeTreeData.fire();
+            view.reveal(view.selection[0]);
         }
     }
 
