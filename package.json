@@ -1,7 +1,8 @@
 {
   "name": "references-view",
-  "displayName": "references-view",
-  "description": "Show find references result as dedicated view",
+  "displayName": "Reference Search View",
+  "icon": "media/icon.png",
+  "description": "Reference Search results as separate, stable view in the sidebar",
   "version": "0.0.5",
   "publisher": "ms-vscode",
   "engines": {
