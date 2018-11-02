@@ -305,7 +305,10 @@ export function activate(context: vscode.ExtensionContext) {
     const showRefCommand = (arg?: ReferenceItem | any) => {
         if (arg instanceof ReferenceItem) {
             const { location } = arg;
-            vscode.window.showTextDocument(location.uri, { selection: location.range.with({ end: location.range.start }) });
+            vscode.window.showTextDocument(location.uri, {
+                selection: location.range.with({ end: location.range.start }),
+                preserveFocus: true
+            });
         }
     };
 
