@@ -1,6 +1,15 @@
 # References View
 
-The references view extension show results of reference search similar to search results: A separate view with a tree like structure. That allows for a more stable list of references.
+This extension shows reference search results as separate view, just like search results. It complements the peek view presentation that is also built into VS Code. The following feature are available: 
+
+* List All References via the Command Palette, the Context Menu, or via <kbd>Alt+Shift+F12</kbd>
+* View references in a dedicated tree view that sits in the sidebar
+* Navigate through search results via <kbd>F4</kbd> and  <kbd>Shift+F4</kbd>
+* Remove references from the list via inline commands
+
+![](media/demo.png)
+
+**Note** that this extension is bundled with Visual Studio Code version 1.29 and later - it doesn't need to be installed anymore.
 
 ## Requirements
 
@@ -23,10 +32,6 @@ contact [opencode@microsoft.com](mailto:opencode@microsoft.com) with any additio
 
 ## Release Notes
 
-### 0.0.1
+### 0.0.6
 
 Initial release of the extension.
-
-### 0.0.2
-
-* Navigation commands `F4` and `Shift+F4`
