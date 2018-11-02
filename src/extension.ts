@@ -234,8 +234,9 @@ class DataProvider implements vscode.TreeDataProvider<TreeObject> {
 
 export function activate(context: vscode.ExtensionContext) {
 
+    const viewId = 'references-view.tree';
     const treeDataProvider = new DataProvider();
-    const view = vscode.window.createTreeView('references-view.tree', {
+    const view = vscode.window.createTreeView(viewId, {
         treeDataProvider,
         showCollapseAll: true
     });
@@ -280,7 +281,11 @@ export function activate(context: vscode.ExtensionContext) {
 
             treeDataProvider.setModel(model);
 
-            await model.resolve
+            await Promise.all([
+                vscode.commands.executeCommand(`${viewId}.focus`),
+                model.resolve
+            ]);
+
             editorHighlights.highlight();
             const selection = model.first();
             if (selection) {
