@@ -244,17 +244,18 @@ export function activate(context: vscode.ExtensionContext) {
     const editorHighlights = new class {
 
         private _decorationType = vscode.window.createTextEditorDecorationType({
-            backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground')
+            backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
+            rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
         });
 
-        private _editorListener = vscode.window.onDidChangeActiveTextEditor(this.highlight, this);
+        private _editorListener = vscode.window.onDidChangeActiveTextEditor(this.add, this);
 
         dispose() {
             this.clear();
             this._editorListener.dispose();
         }
 
-        highlight() {
+        add() {
             const { activeTextEditor: editor } = vscode.window;
             const model = treeDataProvider.getModel();
             if (!editor || !model) {
@@ -286,7 +287,7 @@ export function activate(context: vscode.ExtensionContext) {
                 model.resolve
             ]);
 
-            editorHighlights.highlight();
+            editorHighlights.add();
             const selection = model.first();
             if (selection) {
                 view.reveal(selection, { select: true, focus: true });
