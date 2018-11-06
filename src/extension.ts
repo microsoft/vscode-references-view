@@ -249,10 +249,12 @@ export function activate(context: vscode.ExtensionContext) {
         });
 
         private _editorListener = vscode.window.onDidChangeActiveTextEditor(this.add, this);
+        private _viewListener = view.onDidChangeVisibility(e => e.visible ? this.add() : this.clear());
 
         dispose() {
             this.clear();
             this._editorListener.dispose();
+            this._viewListener.dispose();
         }
 
         add() {
