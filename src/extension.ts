@@ -245,7 +245,8 @@ export function activate(context: vscode.ExtensionContext) {
 
         private _decorationType = vscode.window.createTextEditorDecorationType({
             backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
-            rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed
+            rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
+            overviewRulerLane: vscode.OverviewRulerLane.Center
         });
 
         private _editorListener = vscode.window.onDidChangeActiveTextEditor(this.add, this);
