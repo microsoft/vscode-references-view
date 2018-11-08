@@ -45,7 +45,7 @@
     "commands": [
       {
         "command": "references-view.find",
-        "title": "List All References",
+        "title": "Find All References",
         "category": "References"
       },
       {
@@ -80,7 +80,7 @@
         {
           "command": "references-view.find",
           "when": "editorHasReferenceProvider",
-          "group": "navigation@1.51"
+          "group": "navigation@1.49"
         }
       ],
       "view/title": [
