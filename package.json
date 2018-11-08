@@ -38,7 +38,7 @@
         {
           "id": "references-view.tree",
           "name": "Results",
-          "when": "reference-list.hasResult"
+          "when": "reference-list.isActive"
         }
       ]
     },

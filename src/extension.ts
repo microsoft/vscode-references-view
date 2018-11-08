@@ -279,7 +279,13 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const findCommand = async (editor: vscode.TextEditor) => {
+        // upon first interaction set the reference list as active
+        // which will reveal it
+        vscode.commands.executeCommand('setContext', 'reference-list.isActive', true)
+
+        // remove existing highlights
         editorHighlights.clear();
+
         if (editor.document.getWordRangeAtPosition(editor.selection.active)) {
             const model = new ReferenceSearchModel(editor.document.uri, editor.selection.active);
 
