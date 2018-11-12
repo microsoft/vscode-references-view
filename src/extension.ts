@@ -276,6 +276,11 @@ export function activate(context: vscode.ExtensionContext) {
                 editor.setDecorations(this._decorationType, []);
             }
         }
+
+        reset() {
+            this.clear();
+            this.add();
+        }
     }
 
     const findCommand = async (editor: vscode.TextEditor) => {
@@ -304,11 +309,13 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
-    const refreshCommand = () => {
+    const refreshCommand = async () => {
         const model = treeDataProvider.getModel();
         if (model) {
             model.reset();
             treeDataProvider._onDidChangeTreeData.fire();
+            await model.resolve
+            editorHighlights.reset();
             view.reveal(view.selection[0]);
         }
     }
@@ -334,6 +341,7 @@ export function activate(context: vscode.ExtensionContext) {
             const next = model.move(arg, true);
             const parent = model.remove(arg);
             treeDataProvider._onDidChangeTreeData.fire(parent);
+            editorHighlights.reset();
             if (next) {
                 view.reveal(next, { select: true });
             }
