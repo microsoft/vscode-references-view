@@ -193,7 +193,7 @@ class DataProvider implements vscode.TreeDataProvider<TreeObject> {
             const wordRange = doc.getWordRangeAtPosition(previewStart);
             const before = doc.getText(new vscode.Range(wordRange ? wordRange.start : previewStart, range.start)).replace(/^\s*/g, '');
             const inside = doc.getText(range);
-            const previewEnd = range.end.translate(0, 31);
+            const previewEnd = range.end.translate(0, 331);
             const after = doc.getText(new vscode.Range(range.end, previewEnd)).replace(/\s*$/g, '')
 
             const label: vscode.TreeItemLabel = {
