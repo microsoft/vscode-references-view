@@ -1,3 +1,6 @@
+### Version 0.0.11
+- show a default message after clearing, fixes #5
+
 ### Version 0.0.10
 - increate preview portion after matches (origin/master, origin/HEAD)
 - add summary message atop the results, #15
