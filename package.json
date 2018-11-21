@@ -6,7 +6,7 @@
   "version": "0.0.9",
   "publisher": "ms-vscode",
   "engines": {
-    "vscode": "^1.29.0"
+    "vscode": "^1.30.0"
   },
   "repository": {
     "type": "git",

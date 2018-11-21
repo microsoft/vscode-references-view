@@ -21,6 +21,7 @@ type TreeObject = FileItem | ReferenceItem;
 class ReferenceSearchModel {
 
     private _resolve: Promise<this> | undefined;
+    private _total: number = 0;
 
     constructor(
         readonly uri: vscode.Uri,
@@ -49,6 +50,7 @@ class ReferenceSearchModel {
             this.position
         );
         if (locations) {
+            this._total = locations.length;
             let last: FileItem | undefined;
             locations.sort(ReferenceSearchModel._compareLocations);
             for (const loc of locations) {
@@ -60,6 +62,10 @@ class ReferenceSearchModel {
             }
         }
         return this;
+    }
+
+    get total(): number {
+        return this._total;
     }
 
     get(uri: vscode.Uri): FileItem | undefined {
@@ -283,28 +289,51 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }
 
-    const findCommand = async (editor: vscode.TextEditor) => {
+    const findCommand = async (uri?: vscode.Uri, position?: vscode.Position) => {
         // upon first interaction set the reference list as active
         // which will reveal it
         vscode.commands.executeCommand('setContext', 'reference-list.isActive', true)
 
         // remove existing highlights
         editorHighlights.clear();
+        view.message = undefined;
 
-        if (editor.document.getWordRangeAtPosition(editor.selection.active)) {
-            const model = new ReferenceSearchModel(editor.document.uri, editor.selection.active);
+        let model: ReferenceSearchModel | undefined = undefined;
+        if (uri instanceof vscode.Uri && position instanceof vscode.Position) {
+            // trust args if correct'ish
+            model = new ReferenceSearchModel(uri, position);
 
+        } else if (vscode.window.activeTextEditor) {
+            let editor = vscode.window.activeTextEditor;
+            if (editor.document.getWordRangeAtPosition(editor.selection.active)) {
+                model = new ReferenceSearchModel(editor.document.uri, editor.selection.active);
+            }
+        }
+
+        if (model) {
             treeDataProvider.setModel(model);
 
-            await Promise.all([
-                vscode.commands.executeCommand(`${viewId}.focus`),
-                model.resolve
-            ]);
+            await model.resolve;
 
+            // update editor
             editorHighlights.add();
+
+            // udate tree
             const selection = model.first();
             if (selection) {
                 view.reveal(selection, { select: true, focus: true });
+                vscode.commands.executeCommand(`${viewId}.focus`);
+            }
+
+            // update message
+            if (model.total === 1 && model.items.length === 1) {
+                view.message = new vscode.MarkdownString(`${model.total} result in ${model.items.length} file`);
+            } else if (model.total === 1) {
+                view.message = new vscode.MarkdownString(`${model.total} result in ${model.items.length} files`);
+            } else if (model.items.length === 1) {
+                view.message = new vscode.MarkdownString(`${model.total} results in ${model.items.length} file`);
+            } else {
+                view.message = new vscode.MarkdownString(`${model.total} results in ${model.items.length} files`);
             }
         }
     };
@@ -364,7 +393,7 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         view,
         editorHighlights,
-        vscode.commands.registerTextEditorCommand('references-view.find', findCommand),
+        vscode.commands.registerCommand('references-view.find', findCommand),
         vscode.commands.registerCommand('references-view.refresh', refreshCommand),
         vscode.commands.registerCommand('references-view.clear', clearCommand),
         vscode.commands.registerCommand('references-view.show', showRefCommand),
