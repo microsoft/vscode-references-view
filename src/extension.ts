@@ -242,6 +242,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const viewId = 'references-view.tree';
     const treeDataProvider = new DataProvider();
+
     const view = vscode.window.createTreeView(viewId, {
         treeDataProvider,
         showCollapseAll: true
@@ -352,6 +353,7 @@ export function activate(context: vscode.ExtensionContext) {
     const clearCommand = () => {
         editorHighlights.clear();
         treeDataProvider.setModel(undefined);
+        view.message = new vscode.MarkdownString('To populate this view, open an editor and run the \'Find All References\'-command.');
     }
 
     const showRefCommand = (arg?: ReferenceItem | any) => {
