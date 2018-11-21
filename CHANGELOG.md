@@ -1,3 +1,7 @@
+### Version 0.0.10
+- increate preview portion after matches (origin/master, origin/HEAD)
+- add summary message atop the results, #15
+
 ### Version 0.0.9
 - don't grow editor decorations highlights when typing inside them
 - only show editor decorations when references view is visible
