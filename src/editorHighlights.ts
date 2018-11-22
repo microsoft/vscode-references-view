@@ -4,20 +4,32 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { Model } from './model';
+import { Model, FileItem } from './model';
 
 export class EditorHighlights {
 
-    private _decorationType = vscode.window.createTextEditorDecorationType({
+    private readonly _decorationType = vscode.window.createTextEditorDecorationType({
         backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
         rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
         overviewRulerLane: vscode.OverviewRulerLane.Center
     });
 
     private _model?: Model;
+    private _modelListener?: vscode.Disposable;
+    private _ignore = new Set<FileItem>();
 
     setModel(model: Model): void {
         this._model = model;
+        this._ignore.clear();
+        if (this._modelListener) {
+            this._modelListener.dispose();
+        }
+        this._modelListener = vscode.workspace.onDidChangeTextDocument(e => {
+            // add those items that have been changed to a 
+            // ignore list so that we won't update decorations
+            // for them again
+            this._ignore.add(model.get(e.document.uri)!);
+        })
     }
 
     show() {
@@ -26,7 +38,7 @@ export class EditorHighlights {
             return;
         }
         const item = this._model.get(editor.document.uri);
-        if (item) {
+        if (item && !this._ignore.has(item)) {
             editor.setDecorations(this._decorationType, item.results.map(ref => ref.location.range));
         }
     }
