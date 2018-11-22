@@ -31,7 +31,7 @@ export function activate(context: vscode.ExtensionContext) {
     const findCommand = async (uri?: vscode.Uri, position?: vscode.Position) => {
         // upon first interaction set the reference list as active
         // which will reveal it
-        vscode.commands.executeCommand('setContext', 'reference-list.isActive', true)
+        await vscode.commands.executeCommand('setContext', 'reference-list.isActive', true)
 
         // remove existing highlights
         editorHighlights.setModel(undefined);
