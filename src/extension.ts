@@ -250,6 +250,7 @@ class DataProvider implements vscode.TreeDataProvider<TreeObject> {
             // files
             const result = new vscode.TreeItem(element.uri);
             result.contextValue = 'reference-item'
+            result.description = true;
             result.iconPath = vscode.ThemeIcon.File;
             result.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
             return result;
