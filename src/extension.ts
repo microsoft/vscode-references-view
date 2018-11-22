@@ -2,6 +2,60 @@
 
 import * as vscode from 'vscode';
 
+
+interface HistoryItem {
+    id: string;
+    preview: Thenable<string | undefined>;
+    uri: vscode.Uri,
+    position: vscode.Position;
+}
+
+class History {
+
+    private readonly _items = new Map<string, HistoryItem>();
+
+    *[Symbol.iterator]() {
+        let values = [...this._items.values()];
+        for (let i = values.length - 1; i >= 0; i--) {
+            yield values[i];
+        }
+    }
+
+    add({ uri, position }: ReferenceSearchModel): void {
+
+        const id = History._makeId(uri, position);
+        const preview = vscode.workspace.openTextDocument(uri).then(doc => {
+            let range = doc.getWordRangeAtPosition(position);
+            if (range) {
+                let { before, inside, after } = getPreviewChunks(doc, range);
+
+                // ensure whitespace isn't trimmed when rendering MD
+                before = before.replace(/s$/g, String.fromCharCode(160));
+                after = after.replace(/^s/g, String.fromCharCode(160));
+
+                // make command link
+                let query = encodeURIComponent(JSON.stringify([id]));
+                inside = `[${inside}](command:references-view.refind?${query})`;
+
+                return before + inside + after;
+            }
+        });
+
+        // maps have filo-ordering and by delete-insert we make
+        // sure to update the order for re-run queries
+        this._items.delete(id);
+        this._items.set(id, { id, preview, uri, position });
+    }
+
+    get(id: string): HistoryItem | undefined {
+        return this._items.get(id);
+    }
+
+    private static _makeId(uri: vscode.Uri, position: vscode.Position): string {
+        return Buffer.from(uri.toString() + position.line + position.character).toString('base64');
+    }
+}
+
 class FileItem {
     constructor(
         readonly uri: vscode.Uri,
@@ -162,6 +216,16 @@ class ReferenceSearchModel {
     }
 }
 
+function getPreviewChunks(doc: vscode.TextDocument, range: vscode.Range) {
+    const previewStart = range.start.with({ character: Math.max(0, range.start.character - 8) });
+    const wordRange = doc.getWordRangeAtPosition(previewStart);
+    const before = doc.getText(new vscode.Range(wordRange ? wordRange.start : previewStart, range.start)).replace(/^\s*/g, '');
+    const inside = doc.getText(range);
+    const previewEnd = range.end.translate(0, 331);
+    const after = doc.getText(new vscode.Range(range.end, previewEnd)).replace(/\s*$/g, '');
+    return { before, inside, after }
+}
+
 class DataProvider implements vscode.TreeDataProvider<TreeObject> {
 
     readonly _onDidChangeTreeData = new vscode.EventEmitter<TreeObject>();
@@ -195,12 +259,7 @@ class DataProvider implements vscode.TreeDataProvider<TreeObject> {
             const { range } = element.location;
             const doc = await vscode.workspace.openTextDocument(element.location.uri);
 
-            const previewStart = range.start.with({ character: Math.max(0, range.start.character - 8) });
-            const wordRange = doc.getWordRangeAtPosition(previewStart);
-            const before = doc.getText(new vscode.Range(wordRange ? wordRange.start : previewStart, range.start)).replace(/^\s*/g, '');
-            const inside = doc.getText(range);
-            const previewEnd = range.end.translate(0, 331);
-            const after = doc.getText(new vscode.Range(range.end, previewEnd)).replace(/\s*$/g, '')
+            const { before, inside, after } = getPreviewChunks(doc, range);
 
             const label: vscode.TreeItemLabel = {
                 label: before + inside + after,
@@ -241,6 +300,7 @@ class DataProvider implements vscode.TreeDataProvider<TreeObject> {
 export function activate(context: vscode.ExtensionContext) {
 
     const viewId = 'references-view.tree';
+    const history = new History();
     const treeDataProvider = new DataProvider();
 
     const view = vscode.window.createTreeView(viewId, {
@@ -313,6 +373,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         if (model) {
             treeDataProvider.setModel(model);
+            history.add(model);
 
             await model.resolve;
 
@@ -339,6 +400,16 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
+    const refindCommand = (id: string) => {
+        if (typeof id !== 'string') {
+            return;
+        }
+        let item = history.get(id);
+        if (item) {
+            return findCommand(item.uri, item.position);
+        }
+    }
+
     const refreshCommand = async () => {
         const model = treeDataProvider.getModel();
         if (model) {
@@ -350,10 +421,19 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }
 
-    const clearCommand = () => {
+    const clearCommand = async () => {
         editorHighlights.clear();
         treeDataProvider.setModel(undefined);
-        view.message = new vscode.MarkdownString('To populate this view, open an editor and run the \'Find All References\'-command.');
+
+        let message = new vscode.MarkdownString(`To populate this view, open an editor and run the 'Find All References'-command or run a previous search again:\n`)
+        message.isTrusted = true;
+        for (const item of history) {
+            let md = await item.preview;
+            if (md) {
+                message.appendMarkdown(`* ${md}\n`);
+            }
+        }
+        view.message = message;
     }
 
     const showRefCommand = (arg?: ReferenceItem | any) => {
@@ -396,6 +476,7 @@ export function activate(context: vscode.ExtensionContext) {
         view,
         editorHighlights,
         vscode.commands.registerCommand('references-view.find', findCommand),
+        vscode.commands.registerCommand('references-view.refind', refindCommand),
         vscode.commands.registerCommand('references-view.refresh', refreshCommand),
         vscode.commands.registerCommand('references-view.clear', clearCommand),
         vscode.commands.registerCommand('references-view.show', showRefCommand),
