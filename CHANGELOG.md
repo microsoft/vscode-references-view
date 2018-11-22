@@ -1,3 +1,7 @@
+### Version 0.0.13
+- use sorter names for refresh and clear commands
+- regression - don't show refresh, clear command after clearing
+
 ### Version 0.0.12
 - show a list of recent searches after clearing results, fixes #23
 - add nicer title for command-links #23
