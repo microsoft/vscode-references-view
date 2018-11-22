@@ -60,7 +60,7 @@ export function activate(context: vscode.ExtensionContext) {
         model = await modelCreation;
 
         // update context
-        vscode.commands.executeCommand('setContext', 'reference-list.hasResult', Boolean(model))
+        vscode.commands.executeCommand('setContext', 'reference-list.hasResult', Boolean(model));
 
         if (model) {
             // update history
@@ -106,6 +106,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const clearCommand = async () => {
+        vscode.commands.executeCommand('setContext', 'reference-list.hasResult', false);
         editorHighlights.setModel(undefined);
         provider.setModelCreation(undefined);
 
