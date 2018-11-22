@@ -35,7 +35,8 @@ class History {
 
                 // make command link
                 let query = encodeURIComponent(JSON.stringify([id]));
-                inside = `[${inside}](command:references-view.refind?${query})`;
+                let title = `${vscode.workspace.asRelativePath(uri)}:${position.line + 1}:${position.character + 1}`;
+                inside = `[${inside}](command:references-view.refind?${query} "${title}")`;
 
                 return before + inside + after;
             }
