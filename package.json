@@ -50,7 +50,7 @@
       },
       {
         "command": "references-view.clear",
-        "title": "Clear Reference Results",
+        "title": "Clear",
         "category": "References",
         "icon": {
           "dark": "./media/action-clear-dark.svg",
@@ -59,7 +59,7 @@
       },
       {
         "command": "references-view.refresh",
-        "title": "Refresh Reference Results",
+        "title": "Refresh",
         "category": "References",
         "icon": {
           "dark": "./media/action-refresh-dark.svg",
