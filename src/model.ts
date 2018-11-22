@@ -21,52 +21,35 @@ export class ReferenceItem {
 
 export class Model {
 
-    private _resolve: Promise<this> | undefined;
-    private _total: number = 0;
+    static async create(uri: vscode.Uri, position: vscode.Position): Promise<Model | undefined> {
+        let locations = await vscode.commands.executeCommand<vscode.Location[]>('vscode.executeReferenceProvider', uri, position);
+        if (!locations) {
+            return undefined;
+        }
+        let items: FileItem[] = [];
+        let total = locations.length;
+        let last: FileItem | undefined;
 
-    constructor(
+        // group-by file using sort
+        locations.sort(Model._compareLocations);
+        for (const loc of locations) {
+            if (!last || last.uri.toString() !== loc.uri.toString()) {
+                last = new FileItem(loc.uri, []);
+                items.push(last);
+            }
+            last.results.push(new ReferenceItem(loc, last));
+        }
+        return new Model(uri, position, items, total);
+    }
+
+
+    private constructor(
         readonly uri: vscode.Uri,
         readonly position: vscode.Position,
-        readonly items = new Array<FileItem>()
+        readonly items: FileItem[],
+        readonly total: number
     ) {
         //
-    }
-
-    get resolve(): Promise<this> {
-        if (!this._resolve) {
-            this._resolve = this._doResolve();
-        }
-        return this._resolve;
-    }
-
-    reset() {
-        this._resolve = undefined;
-    }
-
-    private async _doResolve(): Promise<this> {
-        this.items.length = 0
-        const locations = await vscode.commands.executeCommand<vscode.Location[]>(
-            'vscode.executeReferenceProvider',
-            this.uri,
-            this.position
-        );
-        if (locations) {
-            this._total = locations.length;
-            let last: FileItem | undefined;
-            locations.sort(Model._compareLocations);
-            for (const loc of locations) {
-                if (!last || last.uri.toString() !== loc.uri.toString()) {
-                    last = new FileItem(loc.uri, []);
-                    this.items.push(last);
-                }
-                last.results.push(new ReferenceItem(loc, last));
-            }
-        }
-        return this;
-    }
-
-    get total(): number {
-        return this._total;
     }
 
     get(uri: vscode.Uri): FileItem | undefined {

@@ -23,16 +23,11 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
     readonly _onDidChangeTreeData = new vscode.EventEmitter<TreeObject>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-    private _model?: Model;
+    private _modelCreation?: Promise<Model | undefined>;
 
-    setModel(model?: Model) {
-        this._model = model;
+    set model(model: Promise<Model | undefined> | undefined) {
+        this._modelCreation = model;
         this._onDidChangeTreeData.fire();
-        vscode.commands.executeCommand('setContext', 'reference-list.hasResult', Boolean(this._model))
-    }
-
-    getModel(): Model | undefined {
-        return this._model;
     }
 
     async getTreeItem(element: TreeObject): Promise<vscode.TreeItem> {
@@ -76,8 +71,9 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
     async getChildren(element?: TreeObject | undefined): Promise<TreeObject[]> {
         if (element instanceof FileItem) {
             return element.results;
-        } else if (this._model) {
-            return (await this._model.resolve).items;
+        } else if (this._modelCreation) {
+            const model = await this._modelCreation;
+            return model ? model.items : [];
         } else {
             return [];
         }

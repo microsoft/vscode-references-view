@@ -25,6 +25,9 @@ export function activate(context: vscode.ExtensionContext) {
     vscode.window.onDidChangeActiveTextEditor(editorHighlights.show, editorHighlights, context.subscriptions);
     view.onDidChangeVisibility(e => e.visible ? editorHighlights.show() : editorHighlights.hide(), context.subscriptions);
 
+    // current active model
+    let model: Model | undefined;
+
     const findCommand = async (uri?: vscode.Uri, position?: vscode.Position) => {
         // upon first interaction set the reference list as active
         // which will reveal it
@@ -34,23 +37,31 @@ export function activate(context: vscode.ExtensionContext) {
         editorHighlights.hide();
         view.message = undefined;
 
-        let model: Model | undefined = undefined;
+        let modelCreation: Promise<Model | undefined> | undefined;
         if (uri instanceof vscode.Uri && position instanceof vscode.Position) {
             // trust args if correct'ish
-            model = new Model(uri, position);
+            modelCreation = Model.create(uri, position);
 
         } else if (vscode.window.activeTextEditor) {
             let editor = vscode.window.activeTextEditor;
             if (editor.document.getWordRangeAtPosition(editor.selection.active)) {
-                model = new Model(editor.document.uri, editor.selection.active);
+                modelCreation = Model.create(editor.document.uri, editor.selection.active);
             }
         }
 
-        if (model) {
-            provider.setModel(model);
-            history.add(model);
+        if (!modelCreation) {
+            return;
+        }
 
-            await model.resolve;
+        provider.model = modelCreation;
+        model = await modelCreation;
+
+        // update context
+        vscode.commands.executeCommand('setContext', 'reference-list.hasResult', Boolean(model))
+
+        if (model) {
+            // update history
+            history.add(model);
 
             // update editor
             editorHighlights.setModel(model);
@@ -87,19 +98,14 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const refreshCommand = async () => {
-        const model = provider.getModel();
         if (model) {
-            model.reset();
-            provider._onDidChangeTreeData.fire();
-            await model.resolve
-            editorHighlights.refresh();
-            view.reveal(view.selection[0]);
+            return findCommand(model.uri, model.position);
         }
     }
 
     const clearCommand = async () => {
         editorHighlights.hide();
-        provider.setModel(undefined);
+        provider.model = undefined;
 
         let message = new vscode.MarkdownString(`To populate this view, open an editor and run the 'Find All References'-command or run a previous search again:\n`)
         message.isTrusted = true;
@@ -123,7 +129,6 @@ export function activate(context: vscode.ExtensionContext) {
     };
 
     const removeRefCommand = (arg?: ReferenceItem | any) => {
-        const model = provider.getModel();
         if (model) {
             const next = model.move(arg, true);
             const parent = model.remove(arg);
@@ -135,8 +140,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
-    const moveCommand = (fwd: boolean) => {
-        const model = provider.getModel();
+    const showNextPrevCommand = (fwd: boolean) => {
         if (!model) {
             return;
         }
@@ -156,7 +160,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('references-view.clear', clearCommand),
         vscode.commands.registerCommand('references-view.show', showRefCommand),
         vscode.commands.registerCommand('references-view.remove', removeRefCommand),
-        vscode.commands.registerCommand('references-view.showNextReference', () => moveCommand(true)),
-        vscode.commands.registerCommand('references-view.showPrevReference', () => moveCommand(false)),
+        vscode.commands.registerCommand('references-view.showNextReference', () => showNextPrevCommand(true)),
+        vscode.commands.registerCommand('references-view.showPrevReference', () => showNextPrevCommand(false)),
     );
 }
