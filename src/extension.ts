@@ -34,7 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.executeCommand('setContext', 'reference-list.isActive', true)
 
         // remove existing highlights
-        editorHighlights.hide();
+        editorHighlights.setModel(undefined);
         view.message = undefined;
 
         let modelCreation: Promise<Model | undefined> | undefined;
@@ -68,7 +68,6 @@ export function activate(context: vscode.ExtensionContext) {
 
             // update editor
             editorHighlights.setModel(model);
-            editorHighlights.show();
 
             // udate tree
             const selection = model.first();
@@ -107,7 +106,7 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const clearCommand = async () => {
-        editorHighlights.hide();
+        editorHighlights.setModel(undefined);
         provider.setModelCreation(undefined);
 
         let message = new vscode.MarkdownString(`To populate this view, open an editor and run the 'Find All References'-command or run a previous search again:\n`)

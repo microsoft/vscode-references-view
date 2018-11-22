@@ -18,18 +18,23 @@ export class EditorHighlights {
     private _modelListener?: vscode.Disposable;
     private _ignore = new Set<FileItem>();
 
-    setModel(model: Model): void {
+    setModel(model?: Model): void {
         this._model = model;
         this._ignore.clear();
         if (this._modelListener) {
             this._modelListener.dispose();
         }
-        this._modelListener = vscode.workspace.onDidChangeTextDocument(e => {
-            // add those items that have been changed to a 
-            // ignore list so that we won't update decorations
-            // for them again
-            this._ignore.add(model.get(e.document.uri)!);
-        })
+        if (model) {
+            this.show();
+            this._modelListener = vscode.workspace.onDidChangeTextDocument(e => {
+                // add those items that have been changed to a 
+                // ignore list so that we won't update decorations
+                // for them again
+                this._ignore.add(model.get(e.document.uri)!);
+            });
+        } else {
+            this.hide();
+        }
     }
 
     show() {
