@@ -42,6 +42,8 @@ export class Model {
         return new Model(uri, position, items, total);
     }
 
+    private readonly _onDidChange = new vscode.EventEmitter<Model | FileItem>();
+    readonly onDidChange = this._onDidChange.event;
 
     private constructor(
         readonly uri: vscode.Uri,
@@ -75,18 +77,19 @@ export class Model {
         return undefined;
     }
 
-    remove(item: FileItem | ReferenceItem): FileItem | undefined {
+    remove(item: FileItem | ReferenceItem): void {
+
         if (item instanceof FileItem) {
             Model._del(this.items, item);
-            return undefined;
+            this._onDidChange.fire(this);
 
         } else if (item instanceof ReferenceItem) {
             Model._del(item.parent.results, item);
             if (item.parent.results.length === 0) {
                 Model._del(this.items, item.parent);
-                return undefined;
+                this._onDidChange.fire(this);
             } else {
-                return item.parent;
+                this._onDidChange.fire(item.parent);
             }
         }
     }

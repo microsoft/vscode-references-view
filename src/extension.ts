@@ -53,7 +53,10 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
 
-        provider.model = modelCreation;
+        // the model creation promise is passed to the provider so that the 
+        // tree view can indicate loading, for everthing else we need to wait
+        // for the model to be resolved
+        provider.setModelCreation(modelCreation);
         model = await modelCreation;
 
         // update context
@@ -105,7 +108,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const clearCommand = async () => {
         editorHighlights.hide();
-        provider.model = undefined;
+        provider.setModelCreation(undefined);
 
         let message = new vscode.MarkdownString(`To populate this view, open an editor and run the 'Find All References'-command or run a previous search again:\n`)
         message.isTrusted = true;
@@ -131,8 +134,7 @@ export function activate(context: vscode.ExtensionContext) {
     const removeRefCommand = (arg?: ReferenceItem | any) => {
         if (model) {
             const next = model.move(arg, true);
-            const parent = model.remove(arg);
-            provider._onDidChangeTreeData.fire(parent);
+            model.remove(arg);
             editorHighlights.refresh();
             if (next) {
                 view.reveal(next, { select: true });

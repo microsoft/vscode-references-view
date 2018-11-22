@@ -6,8 +6,6 @@
 import * as vscode from 'vscode';
 import { FileItem, ReferenceItem, Model } from './model';
 
-type TreeObject = FileItem | ReferenceItem;
-
 export function getPreviewChunks(doc: vscode.TextDocument, range: vscode.Range) {
     const previewStart = range.start.with({ character: Math.max(0, range.start.character - 8) });
     const wordRange = doc.getWordRangeAtPosition(previewStart);
@@ -18,16 +16,30 @@ export function getPreviewChunks(doc: vscode.TextDocument, range: vscode.Range) 
     return { before, inside, after }
 }
 
+type TreeObject = FileItem | ReferenceItem;
+
 export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
 
-    readonly _onDidChangeTreeData = new vscode.EventEmitter<TreeObject>();
+    private readonly _onDidChangeTreeData = new vscode.EventEmitter<TreeObject>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
     private _modelCreation?: Promise<Model | undefined>;
+    private _modelListener?: vscode.Disposable;
 
-    set model(model: Promise<Model | undefined> | undefined) {
-        this._modelCreation = model;
+    setModelCreation(modelCreation?: Promise<Model | undefined>) {
+        if (this._modelListener) {
+            this._modelListener.dispose();
+        }
+        this._modelCreation = modelCreation;
         this._onDidChangeTreeData.fire();
+
+        if (modelCreation) {
+            modelCreation.then(model => {
+                if (model && modelCreation === this._modelCreation) {
+                    this._modelListener = model.onDidChange(e => this._onDidChangeTreeData.fire(e instanceof FileItem ? e : undefined));
+                }
+            })
+        }
     }
 
     async getTreeItem(element: TreeObject): Promise<vscode.TreeItem> {
