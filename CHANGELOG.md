@@ -1,3 +1,9 @@
+### Version 0.0.14
+- allow to copy one or all references to the clipboard, fixes #26
+- align command names
+- copy the correct element, copy should include leading/trailing whitespace
+- prefetch "next" document when loading/resolve a document
+
 ### Version 0.0.13
 - use sorter names for refresh and clear commands
 - regression - don't show refresh, clear command after clearing
