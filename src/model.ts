@@ -6,10 +6,20 @@
 import * as vscode from 'vscode';
 
 export class FileItem {
+
+    private _document: Thenable<vscode.TextDocument> | undefined;
+
     constructor(
         readonly uri: vscode.Uri,
         readonly results: Array<ReferenceItem>
     ) { }
+
+    getDocument(): Thenable<vscode.TextDocument> {
+        if (!this._document) {
+            this._document = vscode.workspace.openTextDocument(this.uri);
+        }
+        return this._document;
+    }
 }
 
 export class ReferenceItem {

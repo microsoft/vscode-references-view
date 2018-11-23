@@ -73,6 +73,14 @@
           "dark": "./media/action-remove-dark.svg",
           "light": "./media/action-remove.svg"
         }
+      },
+      {
+        "command": "references-view.copy",
+        "title": "Copy"
+      },
+      {
+        "command": "references-view.copyAll",
+        "title": "Copy All"
       }
     ],
     "menus": {
@@ -100,11 +108,27 @@
           "command": "references-view.remove",
           "group": "inline",
           "when": "view == references-view.tree && viewItem == reference-item"
+        },
+        {
+          "command": "references-view.copy",
+          "when": "view == references-view.tree"
+        },
+        {
+          "command": "references-view.copyAll",
+          "when": "view == references-view.tree"
         }
       ],
       "commandPalette": [
         {
           "command": "references-view.remove",
+          "when": "never"
+        },
+        {
+          "command": "references-view.copy",
+          "when": "never"
+        },
+        {
+          "command": "references-view.copyAll",
           "when": "never"
         },
         {

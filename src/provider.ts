@@ -6,8 +6,8 @@
 import * as vscode from 'vscode';
 import { FileItem, ReferenceItem, Model } from './model';
 
-export function getPreviewChunks(doc: vscode.TextDocument, range: vscode.Range) {
-    const previewStart = range.start.with({ character: Math.max(0, range.start.character - 8) });
+export function getPreviewChunks(doc: vscode.TextDocument, range: vscode.Range, beforeLen = 8) {
+    const previewStart = range.start.with({ character: Math.max(0, range.start.character - beforeLen) });
     const wordRange = doc.getWordRangeAtPosition(previewStart);
     const before = doc.getText(new vscode.Range(wordRange ? wordRange.start : previewStart, range.start)).replace(/^\s*/g, '');
     const inside = doc.getText(range);
@@ -57,7 +57,7 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
         if (element instanceof ReferenceItem) {
             // references
             const { range } = element.location;
-            const doc = await vscode.workspace.openTextDocument(element.location.uri);
+            const doc = await element.parent.getDocument();
 
             const { before, inside, after } = getPreviewChunks(doc, range);
 

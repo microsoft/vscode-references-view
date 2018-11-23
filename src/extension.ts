@@ -5,8 +5,8 @@
 
 import * as vscode from 'vscode';
 import { History } from './history';
-import { Model, ReferenceItem } from './model';
-import { DataProvider } from './provider';
+import { Model, ReferenceItem, FileItem } from './model';
+import { DataProvider, getPreviewChunks } from './provider';
 import { EditorHighlights } from './editorHighlights';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -152,6 +152,24 @@ export function activate(context: vscode.ExtensionContext) {
             view.reveal(next, { select: true });
             showRefCommand(next);
         }
+    };
+
+    const copyCommand = async (stack: object[]) => {
+        let val = '';
+        while (stack.length > 0) {
+            let item = stack.pop();
+            if (item instanceof ReferenceItem) {
+                let doc = await item.parent.getDocument()
+                let chunks = getPreviewChunks(doc, item.location.range, 20);
+                val += `  ${item.location.range.start.line + 1},${item.location.range.start.character + 1}:${chunks.before + chunks.inside + chunks.after}\n`;
+            } else if (item instanceof FileItem) {
+                val += `${vscode.workspace.asRelativePath(item.uri)}\n`;
+                stack.push(...item.results);
+            }
+        }
+        if (val) {
+            await vscode.env.clipboard.writeText(val);
+        }
     }
 
     context.subscriptions.push(
@@ -164,5 +182,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('references-view.remove', removeRefCommand),
         vscode.commands.registerCommand('references-view.showNextReference', () => showNextPrevCommand(true)),
         vscode.commands.registerCommand('references-view.showPrevReference', () => showNextPrevCommand(false)),
+        vscode.commands.registerCommand('references-view.copy', () => copyCommand(view.selection.slice(0))),
+        vscode.commands.registerCommand('references-view.copyAll', () => copyCommand(model ? model.items : []))
     );
 }
