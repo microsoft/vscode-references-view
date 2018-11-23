@@ -152,12 +152,12 @@
         "key": "shift+alt+f12"
       },
       {
-        "command": "references-view.showNextReference",
+        "command": "references-view.next",
         "when": "reference-list.hasResult",
         "key": "f4"
       },
       {
-        "command": "references-view.showPrevReference",
+        "command": "references-view.prev",
         "when": "reference-list.hasResult",
         "key": "shift+f4"
       }

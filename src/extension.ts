@@ -142,7 +142,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
-    const showNextPrevCommand = (fwd: boolean) => {
+    const focusRefCommand = (fwd: boolean) => {
         if (!model) {
             return;
         }
@@ -180,8 +180,8 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('references-view.clear', clearCommand),
         vscode.commands.registerCommand('references-view.show', showRefCommand),
         vscode.commands.registerCommand('references-view.remove', removeRefCommand),
-        vscode.commands.registerCommand('references-view.showNextReference', () => showNextPrevCommand(true)),
-        vscode.commands.registerCommand('references-view.showPrevReference', () => showNextPrevCommand(false)),
+        vscode.commands.registerCommand('references-view.next', () => focusRefCommand(true)),
+        vscode.commands.registerCommand('references-view.prev', () => focusRefCommand(false)),
         vscode.commands.registerCommand('references-view.copy', () => copyCommand(view.selection.slice(0))),
         vscode.commands.registerCommand('references-view.copyAll', () => copyCommand(model ? model.items : []))
     );
