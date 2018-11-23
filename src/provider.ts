@@ -6,13 +6,17 @@
 import * as vscode from 'vscode';
 import { FileItem, ReferenceItem, Model } from './model';
 
-export function getPreviewChunks(doc: vscode.TextDocument, range: vscode.Range, beforeLen = 8) {
-    const previewStart = range.start.with({ character: Math.max(0, range.start.character - beforeLen) });
-    const wordRange = doc.getWordRangeAtPosition(previewStart);
-    const before = doc.getText(new vscode.Range(wordRange ? wordRange.start : previewStart, range.start)).replace(/^\s*/g, '');
-    const inside = doc.getText(range);
-    const previewEnd = range.end.translate(0, 331);
-    const after = doc.getText(new vscode.Range(range.end, previewEnd)).replace(/\s*$/g, '');
+export function getPreviewChunks(doc: vscode.TextDocument, range: vscode.Range, beforeLen: number = 8, trim: boolean = true) {
+    let previewStart = range.start.with({ character: Math.max(0, range.start.character - beforeLen) });
+    let wordRange = doc.getWordRangeAtPosition(previewStart);
+    let before = doc.getText(new vscode.Range(wordRange ? wordRange.start : previewStart, range.start));
+    let inside = doc.getText(range);
+    let previewEnd = range.end.translate(0, 331);
+    let after = doc.getText(new vscode.Range(range.end, previewEnd));
+    if (trim) {
+        before = before.replace(/^\s*/g, '');
+        after = after.replace(/\s*$/g, '');
+    }
     return { before, inside, after }
 }
 

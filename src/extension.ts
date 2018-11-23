@@ -154,14 +154,19 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
-    const copyCommand = async (stack: object[]) => {
+    const copyCommand = async (arg?: ReferenceItem | FileItem | Model | any | undefined) => {
         let val = '';
+        let stack = [arg];
         while (stack.length > 0) {
             let item = stack.pop();
-            if (item instanceof ReferenceItem) {
+            if (item instanceof Model) {
+                stack.push(...item.items);
+
+            } else if (item instanceof ReferenceItem) {
                 let doc = await item.parent.getDocument()
-                let chunks = getPreviewChunks(doc, item.location.range, 20);
+                let chunks = getPreviewChunks(doc, item.location.range, 21, false);
                 val += `  ${item.location.range.start.line + 1},${item.location.range.start.character + 1}:${chunks.before + chunks.inside + chunks.after}\n`;
+
             } else if (item instanceof FileItem) {
                 val += `${vscode.workspace.asRelativePath(item.uri)}\n`;
                 stack.push(...item.results);
@@ -182,7 +187,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('references-view.remove', removeRefCommand),
         vscode.commands.registerCommand('references-view.next', () => focusRefCommand(true)),
         vscode.commands.registerCommand('references-view.prev', () => focusRefCommand(false)),
-        vscode.commands.registerCommand('references-view.copy', () => copyCommand(view.selection.slice(0))),
-        vscode.commands.registerCommand('references-view.copyAll', () => copyCommand(model ? model.items : []))
+        vscode.commands.registerCommand('references-view.copy', copyCommand),
+        vscode.commands.registerCommand('references-view.copyAll', () => copyCommand(model))
     );
 }
