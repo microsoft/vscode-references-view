@@ -61,7 +61,7 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
         if (element instanceof ReferenceItem) {
             // references
             const { range } = element.location;
-            const doc = await element.parent.getDocument();
+            const doc = await element.parent.getDocument(true);
 
             const { before, inside, after } = getPreviewChunks(doc, range);
 

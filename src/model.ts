@@ -11,12 +11,21 @@ export class FileItem {
 
     constructor(
         readonly uri: vscode.Uri,
-        readonly results: Array<ReferenceItem>
+        readonly results: Array<ReferenceItem>,
+        readonly parent: Model
     ) { }
 
-    getDocument(): Thenable<vscode.TextDocument> {
+    getDocument(warmUpNext?: boolean): Thenable<vscode.TextDocument> {
         if (!this._document) {
             this._document = vscode.workspace.openTextDocument(this.uri);
+        }
+        if (warmUpNext) {
+            // load next document once this document has been loaded
+            // and when next document has not yet been loaded
+            const item = this.parent.move(this, true);
+            if (item && !item.parent._document) {
+                this._document.then(() => item.parent.getDocument(false))
+            }
         }
         return this._document;
     }
@@ -36,32 +45,31 @@ export class Model {
         if (!locations) {
             return undefined;
         }
-        let items: FileItem[] = [];
-        let total = locations.length;
-        let last: FileItem | undefined;
-
-        // group-by file using sort
-        locations.sort(Model._compareLocations);
-        for (const loc of locations) {
-            if (!last || last.uri.toString() !== loc.uri.toString()) {
-                last = new FileItem(loc.uri, []);
-                items.push(last);
-            }
-            last.results.push(new ReferenceItem(loc, last));
-        }
-        return new Model(uri, position, items, total);
+        return new Model(uri, position, locations);
     }
 
     private readonly _onDidChange = new vscode.EventEmitter<Model | FileItem>();
     readonly onDidChange = this._onDidChange.event;
 
+    readonly items: FileItem[];
+    readonly total: number;
+
     private constructor(
         readonly uri: vscode.Uri,
         readonly position: vscode.Position,
-        readonly items: FileItem[],
-        readonly total: number
+        locations: vscode.Location[]
     ) {
-        //
+        this.total = locations.length;
+        this.items = [];
+        let last: FileItem | undefined;
+        locations.sort(Model._compareLocations);
+        for (const loc of locations) {
+            if (!last || last.uri.toString() !== loc.uri.toString()) {
+                last = new FileItem(loc.uri, [], this);
+                this.items.push(last);
+            }
+            last.results.push(new ReferenceItem(loc, last));
+        }
     }
 
     get(uri: vscode.Uri): FileItem | undefined {
