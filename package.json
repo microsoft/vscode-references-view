@@ -81,6 +81,10 @@
       {
         "command": "references-view.copyAll",
         "title": "Copy All"
+      },
+      {
+        "command": "references-view.copyPath",
+        "title": "Copy Path"
       }
     ],
     "menus": {
@@ -107,21 +111,26 @@
         {
           "command": "references-view.remove",
           "group": "inline",
-          "when": "view == references-view.tree && viewItem == reference-item"
+          "when": "view == references-view.tree"
         },
         {
           "command": "references-view.remove",
           "group": "1",
-          "when": "view == references-view.tree && viewItem == reference-item"
-        },
-        {
-          "command": "references-view.copy",
-          "group": "2",
           "when": "view == references-view.tree"
         },
         {
+          "command": "references-view.copy",
+          "group": "2@1",
+          "when": "view == references-view.tree"
+        },
+        {
+          "command": "references-view.copyPath",
+          "group": "2@2",
+          "when": "view == references-view.tree && viewItem == file-item"
+        },
+        {
           "command": "references-view.copyAll",
-          "group": "2",
+          "group": "2@3",
           "when": "view == references-view.tree"
         }
       ],
@@ -136,6 +145,10 @@
         },
         {
           "command": "references-view.copyAll",
+          "when": "never"
+        },
+        {
+          "command": "references-view.copyPath",
           "when": "never"
         },
         {

@@ -175,6 +175,16 @@ export function activate(context: vscode.ExtensionContext) {
         if (val) {
             await vscode.env.clipboard.writeText(val);
         }
+    };
+
+    const copyPathCommand = (arg?: FileItem) => {
+        if (arg instanceof FileItem) {
+            if (arg.uri.scheme === 'file') {
+                vscode.env.clipboard.writeText(arg.uri.fsPath);
+            } else {
+                vscode.env.clipboard.writeText(arg.uri.toString(true));
+            }
+        }
     }
 
     context.subscriptions.push(
@@ -188,6 +198,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('references-view.next', () => focusRefCommand(true)),
         vscode.commands.registerCommand('references-view.prev', () => focusRefCommand(false)),
         vscode.commands.registerCommand('references-view.copy', copyCommand),
-        vscode.commands.registerCommand('references-view.copyAll', () => copyCommand(model))
+        vscode.commands.registerCommand('references-view.copyAll', () => copyCommand(model)),
+        vscode.commands.registerCommand('references-view.copyPath', copyPathCommand),
     );
 }
