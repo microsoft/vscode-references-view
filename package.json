@@ -68,7 +68,7 @@
       },
       {
         "command": "references-view.remove",
-        "title": "Remove Reference from List",
+        "title": "Dismiss",
         "icon": {
           "dark": "./media/action-remove-dark.svg",
           "light": "./media/action-remove.svg"
@@ -110,11 +110,18 @@
           "when": "view == references-view.tree && viewItem == reference-item"
         },
         {
+          "command": "references-view.remove",
+          "group": "1",
+          "when": "view == references-view.tree && viewItem == reference-item"
+        },
+        {
           "command": "references-view.copy",
+          "group": "2",
           "when": "view == references-view.tree"
         },
         {
           "command": "references-view.copyAll",
+          "group": "2",
           "when": "view == references-view.tree"
         }
       ],
