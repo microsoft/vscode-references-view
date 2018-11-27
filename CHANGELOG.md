@@ -1,3 +1,9 @@
+### Version 0.0.15
+- update screen shot (origin/master, origin/HEAD)
+- update vscode.proposed.d.ts
+- add dismiss comment to context menu
+- add Copy Path command
+
 ### Version 0.0.14
 - allow to copy one or all references to the clipboard, fixes #26
 - align command names
