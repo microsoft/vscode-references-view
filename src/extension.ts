@@ -110,15 +110,18 @@ export function activate(context: vscode.ExtensionContext) {
         editorHighlights.setModel(undefined);
         provider.setModelCreation(undefined);
 
-        let message = new vscode.MarkdownString(`To populate this view, open an editor and run the 'Find All References'-command or run a previous search again:\n`)
-        message.isTrusted = true;
-        for (const item of history) {
-            let md = await item.preview;
-            if (md) {
-                message.appendMarkdown(`* ${md}\n`);
+        let lis = provider.onDidReturnEmpty(async () => {
+            lis.dispose();
+            let message = new vscode.MarkdownString(`To populate this view, open an editor and run the 'Find All References'-command or run a previous search again:\n`)
+            message.isTrusted = true;
+            for (const item of history) {
+                let md = await item.preview;
+                if (md) {
+                    message.appendMarkdown(`* ${md}\n`);
+                }
             }
-        }
-        view.message = message;
+            view.message = message;
+        });
     }
 
     const showRefCommand = (arg?: ReferenceItem | any) => {

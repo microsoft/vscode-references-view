@@ -27,6 +27,9 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
     private readonly _onDidChangeTreeData = new vscode.EventEmitter<TreeObject>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
+    private readonly _onDidReturnEmpty = new vscode.EventEmitter<this>();
+    readonly onDidReturnEmpty = this._onDidReturnEmpty.event;
+
     private _modelCreation?: Promise<Model | undefined>;
     private _modelListener?: vscode.Disposable;
 
@@ -85,6 +88,9 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
     }
 
     async getChildren(element?: TreeObject | undefined): Promise<TreeObject[]> {
+        if (!this._modelCreation) {
+            this._onDidReturnEmpty.fire(this);
+        }
         if (element instanceof FileItem) {
             return element.results;
         } else if (this._modelCreation) {
