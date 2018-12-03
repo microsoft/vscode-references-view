@@ -1,3 +1,7 @@
+### Version 0.0.16
+- don't show editor highlights when viewlet not visible
+- show history-message only after returning empty from getChildren-call, workaround for #36
+
 ### Version 0.0.15
 - update screen shot (origin/master, origin/HEAD)
 - update vscode.proposed.d.ts
