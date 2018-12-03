@@ -22,7 +22,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // editor highlights
     const editorHighlights = new EditorHighlights();
-    vscode.window.onDidChangeActiveTextEditor(editorHighlights.show, editorHighlights, context.subscriptions);
+    vscode.window.onDidChangeActiveTextEditor(() => view.visible && editorHighlights.show(), context.subscriptions);
     view.onDidChangeVisibility(e => e.visible ? editorHighlights.show() : editorHighlights.hide(), context.subscriptions);
 
     // current active model
