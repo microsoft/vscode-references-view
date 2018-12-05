@@ -29,9 +29,9 @@ export function activate(context: vscode.ExtensionContext) {
     let model: Model | undefined;
 
     const findCommand = async (uri?: vscode.Uri, position?: vscode.Position) => {
-        // upon first interaction set the reference list as active
-        // which will reveal it
+        // upon first interaction set the reference list as active and reveal it
         await vscode.commands.executeCommand('setContext', 'reference-list.isActive', true)
+        vscode.commands.executeCommand(`${viewId}.focus`);
 
         // remove existing highlights
         editorHighlights.setModel(undefined);
@@ -73,7 +73,6 @@ export function activate(context: vscode.ExtensionContext) {
             const selection = model.first();
             if (selection) {
                 view.reveal(selection, { select: true, focus: true });
-                vscode.commands.executeCommand(`${viewId}.focus`);
             }
 
             // update message
