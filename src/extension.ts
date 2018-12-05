@@ -109,15 +109,12 @@ export function activate(context: vscode.ExtensionContext) {
         editorHighlights.setModel(undefined);
         provider.setModelCreation(undefined);
 
-        let lis = provider.onDidReturnEmpty(async () => {
+        let lis = provider.onDidReturnEmpty(() => {
             lis.dispose();
             let message = new vscode.MarkdownString(`To populate this view, open an editor and run the 'Find All References'-command or run a previous search again:\n`)
             message.isTrusted = true;
             for (const item of history) {
-                let md = await item.preview;
-                if (md) {
-                    message.appendMarkdown(`* ${md}\n`);
-                }
+                message.appendMarkdown(`* ${item.preview}\n`);
             }
             view.message = message;
         });

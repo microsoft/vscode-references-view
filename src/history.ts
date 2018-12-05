@@ -10,7 +10,7 @@ import { getPreviewChunks } from './provider';
 
 export interface HistoryItem {
     id: string;
-    preview: Thenable<string | undefined>;
+    preview: string;
     uri: vscode.Uri,
     position: vscode.Position;
 }
@@ -26,26 +26,32 @@ export class History {
         }
     }
 
-    add({ uri, position }: Model): void {
+    async add({ uri, position }: Model): Promise<void> {
 
-        const id = History._makeId(uri, position);
-        const preview = vscode.workspace.openTextDocument(uri).then(doc => {
-            let range = doc.getWordRangeAtPosition(position);
-            if (range) {
-                let { before, inside, after } = getPreviewChunks(doc, range);
+        let doc: vscode.TextDocument;
+        try {
+            doc = await vscode.workspace.openTextDocument(uri);
+        } catch (e) {
+            return;
+        }
 
-                // ensure whitespace isn't trimmed when rendering MD
-                before = before.replace(/s$/g, String.fromCharCode(160));
-                after = after.replace(/^s/g, String.fromCharCode(160));
+        const range = doc.getWordRangeAtPosition(position);
+        if (!range) {
+            return;
+        }
 
-                // make command link
-                let query = encodeURIComponent(JSON.stringify([id]));
-                let title = `${vscode.workspace.asRelativePath(uri)}:${position.line + 1}:${position.character + 1}`;
-                inside = `[${inside}](command:references-view.refind?${query} "${title}")`;
+        const id = History._makeId(uri, range.start);
 
-                return before + inside + after;
-            }
-        });
+        // make preview
+        let { before, inside, after } = getPreviewChunks(doc, range);
+        // ensure whitespace isn't trimmed when rendering MD
+        before = before.replace(/s$/g, String.fromCharCode(160));
+        after = after.replace(/^s/g, String.fromCharCode(160));
+        // make command link
+        let query = encodeURIComponent(JSON.stringify([id]));
+        let title = `${vscode.workspace.asRelativePath(uri)}:${position.line + 1}:${position.character + 1}`;
+        inside = `[${inside}](command:references-view.refind?${query} "${title}")`;
+        const preview = before + inside + after
 
         // maps have filo-ordering and by delete-insert we make
         // sure to update the order for re-run queries
