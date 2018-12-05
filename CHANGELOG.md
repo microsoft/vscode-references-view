@@ -1,3 +1,6 @@
+### Version 0.0.18
+- copy all shouldn't open more than 100 files, #48
+
 ### Version 0.0.17
 - reveal viewlet when starting search, fixes #47
 - focus editor via f4/shift+f4, fixes #44
