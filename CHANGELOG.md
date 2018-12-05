@@ -1,3 +1,9 @@
+### Version 0.0.17
+- reveal viewlet when starting search, fixes #47
+- focus editor via f4/shift+f4, fixes #44
+- better duplicate histry entry prevention, fixes #39
+- show a message and history when not having results, fixes #40
+
 ### Version 0.0.16
 - don't show editor highlights when viewlet not visible
 - show history-message only after returning empty from getChildren-call, workaround for #36
