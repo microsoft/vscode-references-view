@@ -19,6 +19,18 @@ export class History {
 
     private readonly _items = new Map<string, HistoryItem>();
 
+    get summary(): string {
+        let val = '';
+        for (const item of this) {
+            val += `* ${item.preview}\n`;
+        }
+        return val;
+    }
+
+    get isEmpty(): boolean {
+        return this._items.size == 0;
+    }
+
     *[Symbol.iterator]() {
         let values = [...this._items.values()];
         for (let i = values.length - 1; i >= 0; i--) {

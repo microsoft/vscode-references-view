@@ -28,6 +28,18 @@ export function activate(context: vscode.ExtensionContext) {
     // current active model
     let model: Model | undefined;
 
+    const showNoResult = () => {
+        let message: vscode.MarkdownString;
+        if (history.isEmpty) {
+            message = new vscode.MarkdownString('No results found.');
+        } else {
+            message = new vscode.MarkdownString();
+            message.value = `No results found, run a previous search again:\n${history.summary}`;
+            message.isTrusted = true;
+        }
+        view.message = message;
+    };
+
     const findCommand = async (uri?: vscode.Uri, position?: vscode.Position) => {
         // upon first interaction set the reference list as active and reveal it
         await vscode.commands.executeCommand('setContext', 'reference-list.isActive', true)
@@ -49,42 +61,44 @@ export function activate(context: vscode.ExtensionContext) {
             }
         }
 
-        if (!modelCreation) {
-            return;
-        }
-
         // the model creation promise is passed to the provider so that the 
         // tree view can indicate loading, for everthing else we need to wait
         // for the model to be resolved
         provider.setModelCreation(modelCreation);
-        model = await modelCreation;
 
-        // update context
+        if (!modelCreation) {
+            return showNoResult();
+        }
+
+        // wait for model, update context and UI
+        model = await modelCreation;
         vscode.commands.executeCommand('setContext', 'reference-list.hasResult', Boolean(model));
 
-        if (model) {
-            // update history
-            history.add(model);
+        if (!model || model.items.length === 0) {
+            return showNoResult();
+        }
 
-            // update editor
-            editorHighlights.setModel(model);
+        // update history
+        history.add(model);
 
-            // udate tree
-            const selection = model.first();
-            if (selection) {
-                view.reveal(selection, { select: true, focus: true });
-            }
+        // update editor
+        editorHighlights.setModel(model);
 
-            // update message
-            if (model.total === 1 && model.items.length === 1) {
-                view.message = new vscode.MarkdownString(`${model.total} result in ${model.items.length} file`);
-            } else if (model.total === 1) {
-                view.message = new vscode.MarkdownString(`${model.total} result in ${model.items.length} files`);
-            } else if (model.items.length === 1) {
-                view.message = new vscode.MarkdownString(`${model.total} results in ${model.items.length} file`);
-            } else {
-                view.message = new vscode.MarkdownString(`${model.total} results in ${model.items.length} files`);
-            }
+        // udate tree
+        const selection = model.first();
+        if (selection) {
+            view.reveal(selection, { select: true, focus: true });
+        }
+
+        // update message
+        if (model.total === 1 && model.items.length === 1) {
+            view.message = new vscode.MarkdownString(`${model.total} result in ${model.items.length} file`);
+        } else if (model.total === 1) {
+            view.message = new vscode.MarkdownString(`${model.total} result in ${model.items.length} files`);
+        } else if (model.items.length === 1) {
+            view.message = new vscode.MarkdownString(`${model.total} results in ${model.items.length} file`);
+        } else {
+            view.message = new vscode.MarkdownString(`${model.total} results in ${model.items.length} files`);
         }
     };
 
@@ -111,11 +125,9 @@ export function activate(context: vscode.ExtensionContext) {
 
         let lis = provider.onDidReturnEmpty(() => {
             lis.dispose();
-            let message = new vscode.MarkdownString(`To populate this view, open an editor and run the 'Find All References'-command or run a previous search again:\n`)
+            let message = new vscode.MarkdownString();
+            message.value = `To populate this view, open an editor and run the 'Find All References'-command or run a previous search again:\n${history.summary}`;
             message.isTrusted = true;
-            for (const item of history) {
-                message.appendMarkdown(`* ${item.preview}\n`);
-            }
             view.message = message;
         });
     }
