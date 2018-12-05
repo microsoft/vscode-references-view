@@ -171,7 +171,7 @@ export function activate(context: vscode.ExtensionContext) {
         while (stack.length > 0) {
             let item = stack.pop();
             if (item instanceof Model) {
-                stack.push(...item.items);
+                stack.push(...item.items.slice(0, 99));
 
             } else if (item instanceof ReferenceItem) {
                 let doc = await item.parent.getDocument()
