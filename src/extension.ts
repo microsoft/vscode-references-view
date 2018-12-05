@@ -123,12 +123,12 @@ export function activate(context: vscode.ExtensionContext) {
         });
     }
 
-    const showRefCommand = (arg?: ReferenceItem | any) => {
+    const showRefCommand = (arg?: ReferenceItem | any, focusEditor?: boolean) => {
         if (arg instanceof ReferenceItem) {
             const { location } = arg;
             vscode.window.showTextDocument(location.uri, {
                 selection: location.range.with({ end: location.range.start }),
-                preserveFocus: true
+                preserveFocus: !focusEditor
             });
         }
     };
@@ -152,7 +152,7 @@ export function activate(context: vscode.ExtensionContext) {
         const next = model.move(selection, fwd);
         if (next) {
             view.reveal(next, { select: true });
-            showRefCommand(next);
+            showRefCommand(next, true);
         }
     };
 
