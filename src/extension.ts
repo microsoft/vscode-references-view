@@ -40,6 +40,20 @@ export function activate(context: vscode.ExtensionContext) {
         view.message = message;
     };
 
+    const updateTotals = () => {
+        if (model) {
+            if (model.total === 1 && model.items.length === 1) {
+                view.message = new vscode.MarkdownString(`${model.total} result in ${model.items.length} file`);
+            } else if (model.total === 1) {
+                view.message = new vscode.MarkdownString(`${model.total} result in ${model.items.length} files`);
+            } else if (model.items.length === 1) {
+                view.message = new vscode.MarkdownString(`${model.total} results in ${model.items.length} file`);
+            } else {
+                view.message = new vscode.MarkdownString(`${model.total} results in ${model.items.length} files`);
+            }
+        }
+    }
+
     const findCommand = async (uri?: vscode.Uri, position?: vscode.Position) => {
         // upon first interaction set the reference list as active and reveal it
         await vscode.commands.executeCommand('setContext', 'reference-list.isActive', true)
@@ -91,15 +105,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         // update message
-        if (model.total === 1 && model.items.length === 1) {
-            view.message = new vscode.MarkdownString(`${model.total} result in ${model.items.length} file`);
-        } else if (model.total === 1) {
-            view.message = new vscode.MarkdownString(`${model.total} result in ${model.items.length} files`);
-        } else if (model.items.length === 1) {
-            view.message = new vscode.MarkdownString(`${model.total} results in ${model.items.length} file`);
-        } else {
-            view.message = new vscode.MarkdownString(`${model.total} results in ${model.items.length} files`);
-        }
+        updateTotals();
     };
 
     const refindCommand = (id: string) => {
@@ -147,6 +153,7 @@ export function activate(context: vscode.ExtensionContext) {
             const next = model.move(arg, true);
             model.remove(arg);
             editorHighlights.refresh();
+            updateTotals();
             if (next) {
                 view.reveal(next, { select: true });
             }

@@ -52,14 +52,12 @@ export class Model {
     readonly onDidChange = this._onDidChange.event;
 
     readonly items: FileItem[];
-    readonly total: number;
 
     private constructor(
         readonly uri: vscode.Uri,
         readonly position: vscode.Position,
         locations: vscode.Location[]
     ) {
-        this.total = locations.length;
         this.items = [];
         let last: FileItem | undefined;
         locations.sort(Model._compareLocations);
@@ -70,6 +68,14 @@ export class Model {
             }
             last.results.push(new ReferenceItem(loc, last));
         }
+    }
+
+    get total(): number {
+        let n = 0;
+        for (const item of this.items) {
+            n += item.results.length;
+        }
+        return n;
     }
 
     get(uri: vscode.Uri): FileItem | undefined {
