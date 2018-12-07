@@ -100,7 +100,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         // udate tree
         const selection = model.first();
-        if (selection) {
+        if (selection && view.visible) {
             view.reveal(selection, { select: true, focus: true });
         }
 
