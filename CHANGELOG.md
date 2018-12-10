@@ -1,3 +1,8 @@
+### Version 0.0.19
+- update readme
+- fix #64544
+- only reveal an element when the view is visible, fixes #64589
+
 ### Version 0.0.18
 - copy all shouldn't open more than 100 files, #48
 
