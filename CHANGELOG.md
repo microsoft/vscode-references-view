@@ -1,3 +1,6 @@
+### Version 0.0.20
+- Revert "only reveal elements when the view is visible"
+
 ### Version 0.0.19
 - update readme
 - fix #64544
