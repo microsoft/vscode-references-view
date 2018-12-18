@@ -167,8 +167,10 @@ export function activate(context: vscode.ExtensionContext) {
         const selection = view.selection[0] || model.first();
         const next = model.move(selection, fwd);
         if (next) {
-            view.reveal(next, { select: true });
             showRefCommand(next, true);
+            if (view.visible) {
+                view.reveal(next, { select: true });
+            }
         }
     };
 
