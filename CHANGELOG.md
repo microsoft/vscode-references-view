@@ -1,3 +1,6 @@
+### Version 0.0.21
+- add history quick pick, fixes https://github.com/Microsoft/vscode/issues/64535
+
 ### Version 0.0.20
 - Revert "only reveal elements when the view is visible"
 
