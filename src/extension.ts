@@ -203,7 +203,13 @@ export function activate(context: vscode.ExtensionContext) {
                 vscode.env.clipboard.writeText(arg.uri.toString(true));
             }
         }
-    }
+    };
+
+    const showHistryPicks = () => {
+        const items = [...history];
+        const picks = items.map(item => <vscode.QuickPickItem>{ label: item.word, description: item.line });
+        vscode.window.showQuickPick(picks, { placeHolder: 'Select previous reference search' });
+    };
 
     context.subscriptions.push(
         view,
@@ -218,5 +224,6 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('references-view.copy', copyCommand),
         vscode.commands.registerCommand('references-view.copyAll', () => copyCommand(model)),
         vscode.commands.registerCommand('references-view.copyPath', copyPathCommand),
+        vscode.commands.registerCommand('references-view.pickFromHistory', showHistryPicks),
     );
 }

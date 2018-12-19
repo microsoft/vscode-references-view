@@ -10,9 +10,11 @@ import { getPreviewChunks } from './provider';
 
 export interface HistoryItem {
     id: string;
-    preview: string;
-    uri: vscode.Uri,
+    uri: vscode.Uri;
     position: vscode.Position;
+    preview: string;
+    word: string;
+    line: string;
 }
 
 export class History {
@@ -62,13 +64,19 @@ export class History {
         // make command link
         let query = encodeURIComponent(JSON.stringify([id]));
         let title = `${vscode.workspace.asRelativePath(uri)}:${position.line + 1}:${position.character + 1}`;
-        inside = `[${inside}](command:references-view.refind?${query} "${title}")`;
-        const preview = before + inside + after
+        let mdInside = `[${inside}](command:references-view.refind?${query} "${title}")`;
 
         // maps have filo-ordering and by delete-insert we make
         // sure to update the order for re-run queries
         this._items.delete(id);
-        this._items.set(id, { id, preview, uri, position });
+        this._items.set(id, {
+            id,
+            uri,
+            position,
+            preview: before + mdInside + after,
+            word: inside,
+            line: before + inside + after
+        });
     }
 
     get(id: string): HistoryItem | undefined {

@@ -67,6 +67,11 @@
         }
       },
       {
+        "command": "references-view.pickFromHistory",
+        "title": "Show History",
+        "category": "References"
+      },
+      {
         "command": "references-view.remove",
         "title": "Dismiss",
         "icon": {
@@ -162,6 +167,10 @@
         {
           "command": "references-view.refresh",
           "when": "reference-list.hasResult"
+        },
+        {
+          "command": "references-view.pickFromHistory",
+          "when": "reference-list.isActive"
         }
       ]
     },
