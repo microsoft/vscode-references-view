@@ -11,7 +11,8 @@ export class EditorHighlights {
     private readonly _decorationType = vscode.window.createTextEditorDecorationType({
         backgroundColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
         rangeBehavior: vscode.DecorationRangeBehavior.ClosedClosed,
-        overviewRulerLane: vscode.OverviewRulerLane.Center
+        overviewRulerLane: vscode.OverviewRulerLane.Center,
+        overviewRulerColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
     });
 
     private _model?: Model;
