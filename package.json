@@ -20,6 +20,7 @@
   ],
   "activationEvents": [
     "onCommand:references-view.find",
+    "onCommand:references-view.action.showReferences",
     "onView:references-view.tree"
   ],
   "main": "./out/src/extension",

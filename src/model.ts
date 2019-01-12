@@ -45,6 +45,10 @@ export class Model {
         if (!locations) {
             return undefined;
         }
+        return Model.createWithLocations(uri, position, locations);
+    }
+
+    static async createWithLocations(uri: vscode.Uri, position: vscode.Position, locations: vscode.Location[]): Promise<Model> {
         return new Model(uri, position, locations);
     }
 

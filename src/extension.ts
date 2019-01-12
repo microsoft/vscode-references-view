@@ -54,7 +54,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }
 
-    const findCommand = async (uri?: vscode.Uri, position?: vscode.Position) => {
+    const updateModel = async (createModel: () => Promise<Model | undefined> | undefined): Promise<Model | void> => {
         // upon first interaction set the reference list as active and reveal it
         await vscode.commands.executeCommand('setContext', 'reference-list.isActive', true)
         vscode.commands.executeCommand(`${viewId}.focus`);
@@ -63,17 +63,7 @@ export function activate(context: vscode.ExtensionContext) {
         editorHighlights.setModel(undefined);
         view.message = undefined;
 
-        let modelCreation: Promise<Model | undefined> | undefined;
-        if (uri instanceof vscode.Uri && position instanceof vscode.Position) {
-            // trust args if correct'ish
-            modelCreation = Model.create(uri, position);
-
-        } else if (vscode.window.activeTextEditor) {
-            let editor = vscode.window.activeTextEditor;
-            if (editor.document.getWordRangeAtPosition(editor.selection.active)) {
-                modelCreation = Model.create(editor.document.uri, editor.selection.active);
-            }
-        }
+        const modelCreation = createModel();
 
         // the model creation promise is passed to the provider so that the 
         // tree view can indicate loading, for everthing else we need to wait
@@ -92,9 +82,6 @@ export function activate(context: vscode.ExtensionContext) {
             return showNoResult();
         }
 
-        // update history
-        history.add(model);
-
         // update editor
         editorHighlights.setModel(model);
 
@@ -106,6 +93,28 @@ export function activate(context: vscode.ExtensionContext) {
 
         // update message
         updateTotals();
+
+        return model;
+    }
+
+    const findCommand = async (uri?: vscode.Uri, position?: vscode.Position) => {
+        const model = await updateModel(() => {
+            if (uri instanceof vscode.Uri && position instanceof vscode.Position) {
+                // trust args if correct'ish
+                return Model.create(uri, position);
+            } else if (vscode.window.activeTextEditor) {
+                let editor = vscode.window.activeTextEditor;
+                if (editor.document.getWordRangeAtPosition(editor.selection.active)) {
+                    return Model.create(editor.document.uri, editor.selection.active);
+                }
+            }
+            return undefined;
+        });
+
+        if (model) {
+            // update history
+            history.add(model);
+        }
     };
 
     const refindCommand = (id: string) => {
@@ -211,6 +220,22 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showQuickPick(picks, { placeHolder: 'Select previous reference search' });
     };
 
+    const showReferencesAction = async (uri: vscode.Uri, position: vscode.Position, locations: vscode.Location[]) => {
+        if (!(uri instanceof vscode.Uri)) {
+            throw new Error(`Invalid argument for 'uri' at index 0. Expected type of 'vscode.uri'`);
+        }
+        if (!(position instanceof vscode.Position)) {
+            throw new Error(`Invalid argument for 'position' at index 1. Expected type of 'vscode.Position'`);
+        }
+        if (!Array.isArray(locations)) {
+            throw new Error(`Invalid argument for 'locations' at index 2. Expected array`);
+        }
+
+        await updateModel(() => {
+            return Model.createWithLocations(uri, position, locations);
+        });
+    };
+
     context.subscriptions.push(
         view,
         vscode.commands.registerCommand('references-view.find', findCommand),
@@ -225,5 +250,6 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('references-view.copyAll', () => copyCommand(model)),
         vscode.commands.registerCommand('references-view.copyPath', copyPathCommand),
         vscode.commands.registerCommand('references-view.pickFromHistory', showHistryPicks),
+        vscode.commands.registerCommand('references-view.action.showReferences', showReferencesAction),
     );
 }
