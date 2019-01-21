@@ -28,13 +28,17 @@
     "configuration": {
       "properties": {
         "reference.codeLens.location": {
-          "description": "Controls whether peek or find references is invoked when selecting reference code lenses.",
+          "description": "Controls whether peek or find references is invoked when selecting code-lens references.",
           "type": "string",
+          "default": "peek",
           "enum": [
             "peek",
             "view"
           ],
-          "default": "peek"
+          "enumDescriptions": [
+            "Show references in peek editor.",
+            "Show references in separate view."
+          ]
         }
       }
     },
