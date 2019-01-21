@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { History } from './history';
+import { History, HistoryItem } from './history';
 import { Model, ReferenceItem, FileItem } from './model';
 import { DataProvider, getPreviewChunks } from './provider';
 import { EditorHighlights } from './editorHighlights';
@@ -216,10 +216,15 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
-    const showHistryPicks = () => {
-        const items = [...history];
-        const picks = items.map(item => <vscode.QuickPickItem>{ label: item.word, description: item.line });
-        vscode.window.showQuickPick(picks, { placeHolder: 'Select previous reference search' });
+    const showHistryPicks = async () => {
+        interface HistoryPick extends vscode.QuickPickItem {
+            item: HistoryItem
+        }
+        const picks = [...history].map(item => <HistoryPick>{ label: item.word, description: item.line, item });
+        const pick = await vscode.window.showQuickPick(picks, { placeHolder: 'Select previous reference search' });
+        if (pick) {
+            await refindCommand(pick.item.id);
+        }
     };
 
     const showReferences = async (uri: vscode.Uri, position: vscode.Position, locations: vscode.Location[]) => {
