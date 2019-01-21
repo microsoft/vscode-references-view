@@ -228,15 +228,6 @@ export function activate(context: vscode.ExtensionContext) {
     };
 
     const showReferences = async (uri: vscode.Uri, position: vscode.Position, locations: vscode.Location[]) => {
-        if (!(uri instanceof vscode.Uri)) {
-            throw new Error(`Invalid argument for 'uri' at index 0. Expected type of 'vscode.uri'`);
-        }
-        if (!(position instanceof vscode.Position)) {
-            throw new Error(`Invalid argument for 'position' at index 1. Expected type of 'vscode.Position'`);
-        }
-        if (!Array.isArray(locations)) {
-            throw new Error(`Invalid argument for 'locations' at index 2. Expected array`);
-        }
         await updateModel(() => {
             return Promise.resolve(new Model(uri, position, locations));
         });
