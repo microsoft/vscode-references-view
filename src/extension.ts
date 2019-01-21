@@ -102,7 +102,9 @@ export function activate(context: vscode.ExtensionContext) {
             if (uri instanceof vscode.Uri && position instanceof vscode.Position) {
                 // trust args if correct'ish
                 return Model.create(uri, position);
+
             } else if (vscode.window.activeTextEditor) {
+                // take args from active editor
                 let editor = vscode.window.activeTextEditor;
                 if (editor.document.getWordRangeAtPosition(editor.selection.active)) {
                     return Model.create(editor.document.uri, editor.selection.active);
@@ -220,7 +222,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.window.showQuickPick(picks, { placeHolder: 'Select previous reference search' });
     };
 
-    const showReferencesAction = async (uri: vscode.Uri, position: vscode.Position, locations: vscode.Location[]) => {
+    const showReferences = async (uri: vscode.Uri, position: vscode.Position, locations: vscode.Location[]) => {
         if (!(uri instanceof vscode.Uri)) {
             throw new Error(`Invalid argument for 'uri' at index 0. Expected type of 'vscode.uri'`);
         }
@@ -230,14 +232,30 @@ export function activate(context: vscode.ExtensionContext) {
         if (!Array.isArray(locations)) {
             throw new Error(`Invalid argument for 'locations' at index 2. Expected array`);
         }
-
         await updateModel(() => {
-            return Model.createWithLocations(uri, position, locations);
+            return Promise.resolve(new Model(uri, position, locations));
         });
     };
+    let showReferencesDisposable: vscode.Disposable | undefined;
+    const config = 'reference.codeLens.location';
+    function updateShowReferences(event?: vscode.ConfigurationChangeEvent) {
+        if (event && !event.affectsConfiguration(config)) {
+            return;
+        }
+        const value = vscode.workspace.getConfiguration().get<string>(config);
+        if (showReferencesDisposable) {
+            showReferencesDisposable.dispose();
+            showReferencesDisposable = undefined;
+        }
+        if (value === 'view') {
+            showReferencesDisposable = vscode.commands.registerCommand('editor.action.showReferences', showReferences);
+        }
+    };
+    updateShowReferences();
 
     context.subscriptions.push(
         view,
+        vscode.workspace.onDidChangeConfiguration(updateShowReferences),
         vscode.commands.registerCommand('references-view.find', findCommand),
         vscode.commands.registerCommand('references-view.refind', refindCommand),
         vscode.commands.registerCommand('references-view.refresh', refreshCommand),
@@ -250,6 +268,5 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('references-view.copyAll', () => copyCommand(model)),
         vscode.commands.registerCommand('references-view.copyPath', copyPathCommand),
         vscode.commands.registerCommand('references-view.pickFromHistory', showHistryPicks),
-        vscode.commands.registerCommand('references-view.action.showReferences', showReferencesAction),
     );
 }
