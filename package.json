@@ -27,8 +27,8 @@
   "contributes": {
     "configuration": {
       "properties": {
-        "reference.codeLens.location": {
-          "description": "Controls whether peek or find references is invoked when selecting code-lens references.",
+        "references.preferredLocation": {
+          "description": "Controls whether 'Peek References' or 'Find References' is invoked when selecting code lens references",
           "type": "string",
           "default": "peek",
           "enum": [

@@ -233,7 +233,7 @@ export function activate(context: vscode.ExtensionContext) {
         });
     };
     let showReferencesDisposable: vscode.Disposable | undefined;
-    const config = 'reference.codeLens.location';
+    const config = 'references.preferredLocation';
     function updateShowReferences(event?: vscode.ConfigurationChangeEvent) {
         if (event && !event.affectsConfiguration(config)) {
             return;
