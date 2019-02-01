@@ -6,6 +6,14 @@
         {
             "type": "npm",
             "script": "watch",
+            "presentation": {
+                "echo": true,
+                "reveal": "silent",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
             "problemMatcher": [
                 "$tsc-watch"
             ],
