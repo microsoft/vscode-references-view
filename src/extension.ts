@@ -220,7 +220,11 @@ export function activate(context: vscode.ExtensionContext) {
         interface HistoryPick extends vscode.QuickPickItem {
             item: HistoryItem
         }
-        const picks = [...history].map(item => <HistoryPick>{ label: item.word, description: item.line, item });
+        const picks = [...history].map(item => <HistoryPick>{
+            label: item.word,
+            description: `${vscode.workspace.asRelativePath(item.uri)} • ${item.line}`,
+            item
+        });
         const pick = await vscode.window.showQuickPick(picks, { placeHolder: 'Select previous reference search' });
         if (pick) {
             await refindCommand(pick.item.id);
