@@ -108,6 +108,14 @@
       {
         "command": "references-view.copyPath",
         "title": "Copy Path"
+      },
+      {
+        "command": "references-view.refind",
+        "title": "Rerun",
+        "icon": {
+          "dark": "./media/action-refresh-dark.svg",
+          "light": "./media/action-refresh.svg"
+        }
       }
     ],
     "menus": {
@@ -134,17 +142,27 @@
         {
           "command": "references-view.remove",
           "group": "inline",
-          "when": "view == references-view.tree"
+          "when": "view == references-view.tree && viewItem != history-item"
+        },
+        {
+          "command": "references-view.refind",
+          "group": "inline",
+          "when": "view == references-view.tree && viewItem == history-item"
         },
         {
           "command": "references-view.remove",
           "group": "1",
-          "when": "view == references-view.tree"
+          "when": "view == references-view.tree && viewItem != history-item"
+        },
+        {
+          "command": "references-view.refind",
+          "group": "1",
+          "when": "view == references-view.tree && viewItem == history-item"
         },
         {
           "command": "references-view.copy",
           "group": "2@1",
-          "when": "view == references-view.tree"
+          "when": "view == references-view.tree && viewItem != history-item"
         },
         {
           "command": "references-view.copyPath",
@@ -154,7 +172,7 @@
         {
           "command": "references-view.copyAll",
           "group": "2@3",
-          "when": "view == references-view.tree"
+          "when": "view == references-view.tree && viewItem != history-item"
         }
       ],
       "commandPalette": [
@@ -172,6 +190,10 @@
         },
         {
           "command": "references-view.copyPath",
+          "when": "never"
+        },
+        {
+          "command": "references-view.refind",
           "when": "never"
         },
         {

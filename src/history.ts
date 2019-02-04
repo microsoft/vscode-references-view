@@ -8,26 +8,20 @@ import { Model } from './model';
 import { getPreviewChunks } from './provider';
 
 
-export interface HistoryItem {
-    id: string;
-    uri: vscode.Uri;
-    position: vscode.Position;
-    preview: string;
-    word: string;
-    line: string;
+export class HistoryItem {
+    constructor(
+        readonly id: string,
+        readonly uri: vscode.Uri,
+        readonly position: vscode.Position,
+        readonly preview: string,
+        readonly word: string,
+        readonly line: string,
+    ) { }
 }
 
 export class History {
 
     private readonly _items = new Map<string, HistoryItem>();
-
-    get summary(): string {
-        let val = '';
-        for (const item of this) {
-            val += `* ${item.preview}\n`;
-        }
-        return val;
-    }
 
     get isEmpty(): boolean {
         return this._items.size == 0;
@@ -69,14 +63,14 @@ export class History {
         // maps have filo-ordering and by delete-insert we make
         // sure to update the order for re-run queries
         this._items.delete(id);
-        this._items.set(id, {
+        this._items.set(id, new HistoryItem(
             id,
             uri,
             position,
-            preview: before + mdInside + after,
-            word: inside,
-            line: before + inside + after
-        });
+            before + mdInside + after,
+            inside,
+            before + inside + after
+        ));
     }
 
     get(id: string): HistoryItem | undefined {

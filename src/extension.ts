@@ -13,7 +13,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const viewId = 'references-view.tree';
     const history = new History();
-    const provider = new DataProvider();
+    const provider = new DataProvider(history);
 
     const view = vscode.window.createTreeView(viewId, {
         treeDataProvider: provider,
@@ -34,8 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
             message = new vscode.MarkdownString('No results found.');
         } else {
             message = new vscode.MarkdownString();
-            message.value = `No results found, run a previous search again:\n${history.summary}`;
-            message.isTrusted = true;
+            message.value = 'No results found, run a previous search again:';
         }
         view.message = message;
     };
@@ -119,12 +118,8 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
-    const refindCommand = (id: string) => {
-        if (typeof id !== 'string') {
-            return;
-        }
-        let item = history.get(id);
-        if (item) {
+    const refindCommand = (item: HistoryItem) => {
+        if (item instanceof HistoryItem) {
             return findCommand(item.uri, item.position);
         }
     }
@@ -143,18 +138,24 @@ export function activate(context: vscode.ExtensionContext) {
         let lis = provider.onDidReturnEmpty(() => {
             lis.dispose();
             let message = new vscode.MarkdownString();
-            message.value = `To populate this view, open an editor and run the 'Find All References'-command or run a previous search again:\n${history.summary}`;
-            message.isTrusted = true;
+            message.value = `To populate this view, open an editor and run the 'Find All References'-command or run a previous search again:`;
+
             view.message = message;
         });
     }
 
-    const showRefCommand = (arg?: ReferenceItem | any, focusEditor?: boolean) => {
+    const showRefCommand = (arg?: ReferenceItem | HistoryItem | any, focusEditor?: boolean) => {
         if (arg instanceof ReferenceItem) {
             const { location } = arg;
             vscode.window.showTextDocument(location.uri, {
                 selection: location.range.with({ end: location.range.start }),
                 preserveFocus: !focusEditor
+            });
+
+        } else if (arg instanceof HistoryItem) {
+            vscode.window.showTextDocument(arg.uri, {
+                selection: new vscode.Range(arg.position, arg.position),
+                preserveFocus: false
             });
         }
     };
@@ -176,6 +177,9 @@ export function activate(context: vscode.ExtensionContext) {
             return;
         }
         const selection = view.selection[0] || model.first();
+        if (selection instanceof HistoryItem) {
+            return;
+        }
         const next = model.move(selection, fwd);
         if (next) {
             view.reveal(next, { select: true });
@@ -227,7 +231,7 @@ export function activate(context: vscode.ExtensionContext) {
         });
         const pick = await vscode.window.showQuickPick(picks, { placeHolder: 'Select previous reference search' });
         if (pick) {
-            await refindCommand(pick.item.id);
+            await refindCommand(pick.item);
         }
     };
 

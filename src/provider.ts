@@ -5,6 +5,7 @@
 
 import * as vscode from 'vscode';
 import { FileItem, ReferenceItem, Model } from './model';
+import { History, HistoryItem } from './history';
 
 export function getPreviewChunks(doc: vscode.TextDocument, range: vscode.Range, beforeLen: number = 8, trim: boolean = true) {
     let previewStart = range.start.with({ character: Math.max(0, range.start.character - beforeLen) });
@@ -20,7 +21,7 @@ export function getPreviewChunks(doc: vscode.TextDocument, range: vscode.Range, 
     return { before, inside, after }
 }
 
-type TreeObject = FileItem | ReferenceItem;
+type TreeObject = FileItem | ReferenceItem | HistoryItem;
 
 export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
 
@@ -30,8 +31,13 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
     private readonly _onDidReturnEmpty = new vscode.EventEmitter<this>();
     readonly onDidReturnEmpty = this._onDidReturnEmpty.event;
 
+    private readonly _history: History;
     private _modelCreation?: Promise<Model | undefined>;
     private _modelListener?: vscode.Disposable;
+
+    constructor(history: History) {
+        this._history = history;
+    }
 
     setModelCreation(modelCreation?: Promise<Model | undefined>) {
         if (this._modelListener) {
@@ -75,9 +81,23 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
 
             const result = new vscode.TreeItem2(label);
             result.collapsibleState = vscode.TreeItemCollapsibleState.None;
-            result.contextValue = 'reference-item'
+            result.contextValue = 'reference-item';
             result.command = {
                 title: 'Open Reference',
+                command: 'references-view.show',
+                arguments: [element]
+            }
+            return result;
+        }
+
+        if (element instanceof HistoryItem) {
+            // history items
+            const result = new vscode.TreeItem(element.word);
+            result.description = `${vscode.workspace.asRelativePath(element.uri)} • ${element.line}`;
+            result.collapsibleState = vscode.TreeItemCollapsibleState.None;
+            result.contextValue = 'history-item';
+            result.command = {
+                title: 'Show Location',
                 command: 'references-view.show',
                 arguments: [element]
             }
@@ -88,16 +108,18 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
     }
 
     async getChildren(element?: TreeObject | undefined): Promise<TreeObject[]> {
-        if (!this._modelCreation) {
-            this._onDidReturnEmpty.fire(this);
-        }
         if (element instanceof FileItem) {
             return element.results;
         } else if (this._modelCreation) {
             const model = await this._modelCreation;
-            return model ? model.items : [];
+            if (!model || model.items.length === 0) {
+                return [...this._history];
+            } else {
+                return model.items;
+            }
         } else {
-            return [];
+            this._onDidReturnEmpty.fire(this);
+            return [...this._history];
         }
     }
 
