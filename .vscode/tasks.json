@@ -15,7 +15,7 @@
                 "clear": false
             },
             "problemMatcher": [
-                "$tsc-watch"
+                "$ts-webpack"
             ],
             "isBackground": true
         }
