@@ -115,6 +115,7 @@ export function activate(context: vscode.ExtensionContext) {
         if (model) {
             // update history
             history.add(model);
+            vscode.commands.executeCommand('setContext', 'reference-list.hasHistory', true);
         }
     };
 
@@ -147,6 +148,7 @@ export function activate(context: vscode.ExtensionContext) {
     const clearHistoryCommand = async () => {
         await clearCommand();
         history.clear();
+        vscode.commands.executeCommand('setContext', 'reference-list.hasHistory', false);
     }
 
     const showRefCommand = (arg?: ReferenceItem | HistoryItem | any, focusEditor?: boolean) => {
