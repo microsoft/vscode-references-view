@@ -144,6 +144,11 @@ export function activate(context: vscode.ExtensionContext) {
         });
     }
 
+    const clearHistoryCommand = async () => {
+        await clearCommand();
+        history.clear();
+    }
+
     const showRefCommand = (arg?: ReferenceItem | HistoryItem | any, focusEditor?: boolean) => {
         if (arg instanceof ReferenceItem) {
             const { location } = arg;
@@ -264,6 +269,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('references-view.refind', refindCommand),
         vscode.commands.registerCommand('references-view.refresh', refreshCommand),
         vscode.commands.registerCommand('references-view.clear', clearCommand),
+        vscode.commands.registerCommand('references-view.clearHistory', clearHistoryCommand),
         vscode.commands.registerCommand('references-view.show', showRefCommand),
         vscode.commands.registerCommand('references-view.remove', removeRefCommand),
         vscode.commands.registerCommand('references-view.next', () => focusRefCommand(true)),

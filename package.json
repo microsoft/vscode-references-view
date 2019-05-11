@@ -67,6 +67,15 @@
         "category": "References"
       },
       {
+        "command": "references-view.clearHistory",
+        "title": "Clear History",
+        "category": "References",
+        "icon": {
+          "dark": "./media/action-clear-history-dark.svg",
+          "light": "./media/action-clear-history.svg"
+        }
+      },
+      {
         "command": "references-view.clear",
         "title": "Clear",
         "category": "References",
@@ -136,6 +145,11 @@
           "command": "references-view.clear",
           "group": "navigation",
           "when": "view == references-view.tree && reference-list.hasResult"
+        },
+        {
+          "command": "references-view.clearHistory",
+          "group": "navigation",
+          "when": "!reference-list.hasResult"
         }
       ],
       "view/item/context": [
@@ -203,6 +217,10 @@
         {
           "command": "references-view.clear",
           "when": "reference-list.hasResult"
+        },
+        {
+          "command": "references-view.clearHistory",
+          "when": "reference-list.isActive"
         },
         {
           "command": "references-view.refresh",
