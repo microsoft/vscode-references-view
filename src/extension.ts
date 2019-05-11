@@ -131,10 +131,14 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }
 
-    const clearCommand = async () => {
+    const clearResult = () => {
         vscode.commands.executeCommand('setContext', 'reference-list.hasResult', false);
         editorHighlights.setModel(undefined);
         provider.setModelCreation(undefined);
+    }
+
+    const clearCommand = async () => {
+        clearResult();
 
         let lis = provider.onDidReturnEmpty(() => {
             lis.dispose();
@@ -146,8 +150,10 @@ export function activate(context: vscode.ExtensionContext) {
     }
 
     const clearHistoryCommand = async () => {
-        await clearCommand();
+        clearResult();
         history.clear();
+        showNoResult();
+
         vscode.commands.executeCommand('setContext', 'reference-list.hasHistory', false);
     }
 
