@@ -149,7 +149,7 @@
         {
           "command": "references-view.clearHistory",
           "group": "navigation",
-          "when": "reference-list.hasHistory"
+          "when": "reference-list.hasHistory && !reference-list.hasResult"
         }
       ],
       "view/item/context": [
