@@ -71,8 +71,8 @@
         "title": "Clear History",
         "category": "References",
         "icon": {
-          "dark": "./media/action-clear-history-dark.svg",
-          "light": "./media/action-clear-history.svg"
+          "dark": "./media/action-clear-dark.svg",
+          "light": "./media/action-clear.svg"
         }
       },
       {
