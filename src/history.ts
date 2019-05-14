@@ -77,6 +77,10 @@ export class History {
         return this._items.get(id);
     }
 
+    clear(): void {
+        this._items.clear();
+    }
+
     private static _makeId(uri: vscode.Uri, position: vscode.Position): string {
         return Buffer.from(uri.toString() + position.line + position.character).toString('base64');
     }

@@ -115,6 +115,7 @@ export function activate(context: vscode.ExtensionContext) {
         if (model) {
             // update history
             history.add(model);
+            vscode.commands.executeCommand('setContext', 'reference-list.hasHistory', true);
         }
     };
 
@@ -130,10 +131,14 @@ export function activate(context: vscode.ExtensionContext) {
         }
     }
 
-    const clearCommand = async () => {
+    const clearResult = () => {
         vscode.commands.executeCommand('setContext', 'reference-list.hasResult', false);
         editorHighlights.setModel(undefined);
         provider.setModelCreation(undefined);
+    }
+
+    const clearCommand = async () => {
+        clearResult();
 
         let lis = provider.onDidReturnEmpty(() => {
             lis.dispose();
@@ -142,6 +147,14 @@ export function activate(context: vscode.ExtensionContext) {
 
             view.message = message;
         });
+    }
+
+    const clearHistoryCommand = async () => {
+        clearResult();
+        history.clear();
+        showNoResult();
+
+        vscode.commands.executeCommand('setContext', 'reference-list.hasHistory', false);
     }
 
     const showRefCommand = (arg?: ReferenceItem | HistoryItem | any, focusEditor?: boolean) => {
@@ -264,6 +277,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('references-view.refind', refindCommand),
         vscode.commands.registerCommand('references-view.refresh', refreshCommand),
         vscode.commands.registerCommand('references-view.clear', clearCommand),
+        vscode.commands.registerCommand('references-view.clearHistory', clearHistoryCommand),
         vscode.commands.registerCommand('references-view.show', showRefCommand),
         vscode.commands.registerCommand('references-view.remove', removeRefCommand),
         vscode.commands.registerCommand('references-view.next', () => focusRefCommand(true)),
