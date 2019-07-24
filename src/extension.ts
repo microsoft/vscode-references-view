@@ -34,7 +34,7 @@ export function activate(context: vscode.ExtensionContext) {
             message = new vscode.MarkdownString('No results found.');
         } else {
             message = new vscode.MarkdownString();
-            message.value = 'No results found, run a previous search again:';
+            message.value = 'No results found. Run a previous search again:';
         }
         view.message = message;
     };
@@ -64,7 +64,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         const modelCreation = createModel();
 
-        // the model creation promise is passed to the provider so that the 
+        // the model creation promise is passed to the provider so that the
         // tree view can indicate loading, for everthing else we need to wait
         // for the model to be resolved
         provider.setModelCreation(modelCreation);
