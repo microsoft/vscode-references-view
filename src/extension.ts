@@ -29,12 +29,11 @@ export function activate(context: vscode.ExtensionContext) {
     let model: Model | undefined;
 
     const showNoResult = () => {
-        let message: vscode.MarkdownString;
+        let message: string;
         if (history.isEmpty) {
-            message = new vscode.MarkdownString('No results found.');
+            message = 'No results found.';
         } else {
-            message = new vscode.MarkdownString();
-            message.value = 'No results found. Run a previous search again:';
+            message = 'No results found. Run a previous search again:';
         }
         view.message = message;
     };
@@ -42,13 +41,13 @@ export function activate(context: vscode.ExtensionContext) {
     const updateTotals = () => {
         if (model) {
             if (model.total === 1 && model.items.length === 1) {
-                view.message = new vscode.MarkdownString(`${model.total} result in ${model.items.length} file`);
+                view.message = `${model.total} result in ${model.items.length} file`;
             } else if (model.total === 1) {
-                view.message = new vscode.MarkdownString(`${model.total} result in ${model.items.length} files`);
+                view.message = `${model.total} result in ${model.items.length} files`;
             } else if (model.items.length === 1) {
-                view.message = new vscode.MarkdownString(`${model.total} results in ${model.items.length} file`);
+                view.message = `${model.total} results in ${model.items.length} file`;
             } else {
-                view.message = new vscode.MarkdownString(`${model.total} results in ${model.items.length} files`);
+                view.message = `${model.total} results in ${model.items.length} files`;
             }
         }
     }
@@ -142,10 +141,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         let lis = provider.onDidReturnEmpty(() => {
             lis.dispose();
-            let message = new vscode.MarkdownString();
-            message.value = `To populate this view, open an editor and run the 'Find All References'-command or run a previous search again:`;
-
-            view.message = message;
+            view.message = `To populate this view, open an editor and run the 'Find All References'-command or run a previous search again:`;
         });
     }
 

@@ -1440,7 +1440,7 @@ declare module 'vscode' {
 		/**
 		 * An optional human-readable message that will be rendered in the view.
 		 */
-		message?: string | MarkdownString;
+		message?: string;
 
 	}
 
