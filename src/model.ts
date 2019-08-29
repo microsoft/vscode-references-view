@@ -129,7 +129,7 @@ export class Model {
 
         if (item instanceof FileItem) {
             if (fwd) {
-                return item.results[0];
+                return _move(item).results[0];
             } else {
                 return Model._tail(_move(item).results);
             }
