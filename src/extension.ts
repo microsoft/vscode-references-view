@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { History, HistoryItem } from './history';
-import { Model, ReferenceItem, FileItem } from './model';
+import { Model, ReferenceItem, FileItem, FolderItem } from './model';
 import { DataProvider, getPreviewChunks } from './provider';
 import { EditorHighlights } from './editorHighlights';
 
@@ -40,14 +40,16 @@ export function activate(context: vscode.ExtensionContext) {
 
     const updateTotals = () => {
         if (model) {
-            if (model.total === 1 && model.items.length === 1) {
-                view.message = `${model.total} result in ${model.items.length} file`;
-            } else if (model.total === 1) {
-                view.message = `${model.total} result in ${model.items.length} files`;
-            } else if (model.items.length === 1) {
-                view.message = `${model.total} results in ${model.items.length} file`;
+            const totalFiles = model.totalFiles;
+            const totalRefs = model.totalRefs;
+            if (totalRefs === 1 && totalFiles === 1) {
+                view.message = `${totalRefs} result in ${totalFiles} file`;
+            } else if (model.totalRefs === 1) {
+                view.message = `${totalRefs} result in ${totalFiles} files`;
+            } else if (totalFiles === 1) {
+                view.message = `${totalRefs} results in ${totalFiles} file`;
             } else {
-                view.message = `${model.total} results in ${model.items.length} files`;
+                view.message = `${totalRefs} results in ${totalFiles} files`;
             }
         }
     }
@@ -76,7 +78,7 @@ export function activate(context: vscode.ExtensionContext) {
         model = await modelCreation;
         vscode.commands.executeCommand('setContext', 'reference-list.hasResult', Boolean(model));
 
-        if (!model || model.items.length === 0) {
+        if (!model || model.isEmpty) {
             return showNoResult();
         }
 
@@ -171,7 +173,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const removeRefCommand = (arg?: ReferenceItem | any) => {
         if (model) {
-            const next = model.move(arg, true);
+            const next = arg.move(true);
             model.remove(arg);
             editorHighlights.refresh();
             updateTotals();
@@ -189,7 +191,7 @@ export function activate(context: vscode.ExtensionContext) {
         if (selection instanceof HistoryItem) {
             return;
         }
-        const next = model.move(selection, fwd);
+        const next = selection.move(fwd);
         if (next) {
             view.reveal(next, { select: true });
             showRefCommand(next, true);
@@ -202,8 +204,12 @@ export function activate(context: vscode.ExtensionContext) {
         while (stack.length > 0) {
             let item = stack.pop();
             if (item instanceof Model) {
-                stack.push(...item.items.slice(0, 99));
-
+                let counter = 0;
+                for (let file of item.allFiles()) {
+                    stack.push(file);
+                    counter++;
+                    if (counter === 100) break;
+                }
             } else if (item instanceof ReferenceItem) {
                 let doc = await item.parent.getDocument()
                 let chunks = getPreviewChunks(doc, item.location.range, 21, false);

@@ -39,6 +39,11 @@
             "Show references in peek editor.",
             "Show references in separate view."
           ]
+        },
+        "references.treeView": {
+          "description": "Controls whether 'Find References will be displayed in a hierarchical way'",
+          "type": "boolean",
+          "default": false
         }
       }
     },

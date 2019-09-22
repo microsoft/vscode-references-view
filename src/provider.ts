@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { FileItem, ReferenceItem, Model } from './model';
+import { FileItem, ReferenceItem, Model, FolderItem } from './model';
 import { History, HistoryItem } from './history';
 
 export function getPreviewChunks(doc: vscode.TextDocument, range: vscode.Range, beforeLen: number = 8, trim: boolean = true) {
@@ -21,7 +21,7 @@ export function getPreviewChunks(doc: vscode.TextDocument, range: vscode.Range, 
     return { before, inside, after }
 }
 
-type TreeObject = FileItem | ReferenceItem | HistoryItem;
+type TreeObject = FileItem | FolderItem | ReferenceItem | HistoryItem;
 
 export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
 
@@ -104,18 +104,28 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
             return result;
         }
 
+        if (element instanceof FolderItem) {
+            // folder itesm
+            const result = new vscode.TreeItem(element.name);
+            result.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+            result.contextValue = 'folder-item';
+            return result;
+        }
+
         throw new Error();
     }
 
     async getChildren(element?: TreeObject | undefined): Promise<TreeObject[]> {
         if (element instanceof FileItem) {
             return element.results;
+        } else if (element instanceof FolderItem) {
+            return [...element.folders, ...element.files];
         } else if (this._modelCreation) {
             const model = await this._modelCreation;
-            if (!model || model.items.length === 0) {
+            if (!model || model.isEmpty) {
                 return [...this._history];
             } else {
-                return model.items;
+                return [...model.folders, ...model.files];
             }
         } else {
             this._onDidReturnEmpty.fire(this);
@@ -124,8 +134,15 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
     }
 
     getParent(element: TreeObject): TreeObject | undefined {
-        return element instanceof ReferenceItem
-            ? element.parent
-            : undefined;
+        if (element instanceof FileItem || element instanceof FolderItem) {
+            if (element.parent instanceof FolderItem) {
+                return element.parent;
+            }
+            return undefined;
+        }
+        if (element instanceof ReferenceItem) {
+            return element.parent;
+        }
+        return undefined;
     }
 }
