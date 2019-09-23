@@ -253,13 +253,27 @@ export class ReferenceItem {
     }
 }
 
+export interface ModelConfiguration {
+    readonly rootUris: vscode.Uri[];
+    readonly showFolders: boolean;
+}
+
 export class Model {
+    static getDefaultConfiguration(): ModelConfiguration {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        const showFolders = vscode.workspace.getConfiguration().get<boolean>('references.treeView');
+        return {
+            rootUris: workspaceFolders === undefined ? [] : workspaceFolders.map((it) => it.uri),
+            showFolders: showFolders || false,
+        };
+    }
+
     static async create(uri: vscode.Uri, position: vscode.Position): Promise<Model | undefined> {
         let locations = await vscode.commands.executeCommand<vscode.Location[]>('vscode.executeReferenceProvider', uri, position);
         if (!locations) {
             return undefined;
         }
-        return new Model(uri, position, locations);
+        return new Model(uri, position, locations, this.getDefaultConfiguration());
     }
 
     private readonly _onDidChange = new vscode.EventEmitter<Model | FileItem | FolderItem >();
@@ -267,25 +281,23 @@ export class Model {
 
     readonly folders: FolderItem[];
     readonly files: FileItem[];
-    readonly showFolders: boolean;
+    readonly configuration: ModelConfiguration;
 
     constructor(
         readonly uri: vscode.Uri,
         readonly position: vscode.Position,
         locations: vscode.Location[],
-        showFolders?: boolean
+        configuration: ModelConfiguration
     ) {
         this.files = [];
         this.folders = [];
-        if (showFolders === undefined) {
-            showFolders= vscode.workspace.getConfiguration().get<boolean>('references.treeView');
-        }
-        this.showFolders = showFolders === undefined ? false : showFolders;
+        this.configuration = configuration;
+
         let last: FileItem | undefined;
         locations.sort(Model._compareLocations);
         for (const loc of locations) {
             if (!last || last.uri.toString() !== loc.uri.toString()) {
-                if (showFolders) {
+                if (this.configuration.showFolders) {
                     const pathParts = this._getContainerComponents(loc.uri);
                     if (pathParts === undefined) {
                         continue;
@@ -313,15 +325,17 @@ export class Model {
         }
     
         for (let folder of workspaceFolders) {
+            const folderUri = folder.uri;
+            const pathParts = uri.path.split('/');
+            const name = pathParts[pathParts.length - 1];
             if (uri.path.startsWith(folder.uri.path)) {
-                const truncatedPath = uri.path.substring(folder.uri.path.length);
+                const truncatedPath = uri.path.substring(folderUri.path.length);
                 const parts = truncatedPath.split('/');
                 let result = parts.slice(1, parts.length - 2);
-            
                 if (workspaceFolders.length === 1) {
                     return result;
                 } else {
-                    return [folder.name, ...result];
+                    return [name, ...result];
                 }
             }
         }

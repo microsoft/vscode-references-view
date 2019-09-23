@@ -252,7 +252,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const showReferences = async (uri: vscode.Uri, position: vscode.Position, locations: vscode.Location[]) => {
         await updateModel(() => {
-            return Promise.resolve(new Model(uri, position, locations));
+            return Promise.resolve(new Model(uri, position, locations, Model.getDefaultConfiguration()));
         });
     };
     let showReferencesDisposable: vscode.Disposable | undefined;
