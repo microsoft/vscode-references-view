@@ -105,7 +105,7 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
         }
 
         if (element instanceof FolderItem) {
-            // folder itesm
+            // folder items
             const result = new vscode.TreeItem(element.name);
             result.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
             result.contextValue = 'folder-item';
