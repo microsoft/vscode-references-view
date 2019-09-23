@@ -319,27 +319,21 @@ export class Model {
     }
 
     private _getContainerComponents(uri: vscode.Uri): string[] | undefined {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        if (workspaceFolders === undefined) {
-            return undefined;
-        }
-    
-        for (let folder of workspaceFolders) {
-            const folderUri = folder.uri;
-            const pathParts = uri.path.split('/');
+        const rootUris = this.configuration.rootUris;
+        for (let folderUri of rootUris) {
+            const pathParts = folderUri.path.split('/');
             const name = pathParts[pathParts.length - 1];
-            if (uri.path.startsWith(folder.uri.path)) {
+            if (uri.path.startsWith(folderUri.path)) {
                 const truncatedPath = uri.path.substring(folderUri.path.length);
                 const parts = truncatedPath.split('/');
                 let result = parts.slice(1, parts.length - 2);
-                if (workspaceFolders.length === 1) {
+                if (rootUris.length === 1) {
                     return result;
                 } else {
                     return [name, ...result];
                 }
             }
         }
-    
         return undefined;
     }
 
