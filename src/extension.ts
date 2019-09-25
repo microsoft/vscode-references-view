@@ -40,11 +40,11 @@ export function activate(context: vscode.ExtensionContext) {
 
     const updateTotals = () => {
         if (model) {
-            const totalFiles = model.totalFiles;
             const totalRefs = model.totalRefs;
+            const totalFiles = model.totalFiles;
             if (totalRefs === 1 && totalFiles === 1) {
                 view.message = `${totalRefs} result in ${totalFiles} file`;
-            } else if (model.totalRefs === 1) {
+            } else if (totalRefs === 1) {
                 view.message = `${totalRefs} result in ${totalFiles} files`;
             } else if (totalFiles === 1) {
                 view.message = `${totalRefs} results in ${totalFiles} file`;

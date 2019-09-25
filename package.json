@@ -41,7 +41,7 @@
           ]
         },
         "references.treeView": {
-          "description": "Controls whether 'Find References will be displayed in a hierarchical way'",
+          "description": "Controls whether 'Find References' will be displayed in a hierarchical way",
           "type": "boolean",
           "default": false
         }
