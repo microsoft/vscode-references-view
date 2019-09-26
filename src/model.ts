@@ -638,7 +638,7 @@ class ModelImpl implements Model {
         }
 
         for (let child of current._folders) {
-            compacted = compacted || this.compactTree(child);
+            compacted = this.compactTree(child) || compacted;
         }
 
         return compacted;
