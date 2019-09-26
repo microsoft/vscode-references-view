@@ -466,6 +466,7 @@ class ModelImpl implements Model {
             }
             last.addRef(new ReferenceItemImpl(loc));
         }
+        this.compactTree(this.root);
     }
 
     get kind(): 'model' {
@@ -548,11 +549,12 @@ class ModelImpl implements Model {
             return;
         }
         this._onDidChange.fire(folder);
-        if (folder === this.root) {
-            return;
-        }
-        if (folder.isEmpty) {
+        if (folder.isEmpty && folder !== this.root) {
             this.deleteFileOrFolder(folder);
+        } else {
+            if (this.compactTree(this.root)) {
+                this._onDidChange.fire(folder);
+            }
         }
     }
 
@@ -573,7 +575,6 @@ class ModelImpl implements Model {
             throw new Error('Unknown item : ' + item);
         }
     }
-
 
     private _getOrCreate(path: string[], parent: FolderItemImpl): FolderItemImpl {
         if (path.length === 0) {
@@ -624,6 +625,48 @@ class ModelImpl implements Model {
         }
     }
 
+    private compactTree(folder: FolderItemImpl): boolean {
+        let current: FolderItemImpl = folder;
+        let compacted = false;
+        while (true) {
+            const compactedTree = this.compactFolder(current)
+            if (compactedTree === undefined) {
+                break;
+            }
+            compacted = true;
+            current = compactedTree;
+        }
+
+        for (let child of current._folders) {
+            compacted = compacted || this.compactTree(child);
+        }
+
+        return compacted;
+    }
+
+    private compactFolder(folder: FolderItemImpl): FolderItemImpl | undefined {
+        if (folder === this.root) {
+            return undefined;
+        }
+
+        if (folder._files.length === 0 && folder._folders.length == 1) {
+            const replaceWith = folder._folders[0];
+            replaceWith._name = folder._name + '/' + replaceWith._name;
+            replaceWith._parent = folder._parent;
+
+            const parent = folder._parent;
+            if (parent === undefined) {
+                throw new Error('It can\'t happen');
+            }
+
+            const index = parent._folders.indexOf(folder);
+            parent._folders[index] = replaceWith;
+
+            return replaceWith;
+        }
+
+        return undefined;
+    }
 }
 
 function _getSibling<T>(item: T, siblings: ReadonlyArray<T>, delta: number): T | undefined {

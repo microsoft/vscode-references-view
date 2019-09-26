@@ -56,8 +56,6 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
     }
 
     async getTreeItem(element: TreeObject): Promise<vscode.TreeItem> {
-
-
         if (element.kind === 'file') {
             const result = new vscode.TreeItem(element.uri);
             result.contextValue = 'file-item'
