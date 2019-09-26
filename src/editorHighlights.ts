@@ -45,7 +45,7 @@ export class EditorHighlights {
         }
         const item = this._model.get(editor.document.uri);
         if (item && !this._ignore.has(item)) {
-            editor.setDecorations(this._decorationType, item.results.map(ref => ref.location.range));
+            editor.setDecorations(this._decorationType, item.references.map(ref => ref.location.range));
         }
     }
 

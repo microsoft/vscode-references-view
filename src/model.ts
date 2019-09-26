@@ -5,88 +5,192 @@
 
 import * as vscode from 'vscode';
 
-export class FolderItem {
-    constructor(
-        readonly name : string,
-        readonly parent: Model | FolderItem,
-        readonly folders: Array<FolderItem>,
-        readonly files: Array<FileItem>
-    ) { }
+export type ItemKind = 'file' | 'folder' | 'reference';
 
-    get firstFile(): FileItem | undefined {
+export interface FsItem {
+    readonly parent: FolderItem | undefined;
+    readonly name: string;
+
+    move(fwd: boolean): ReferenceItemImpl | undefined;
+}
+
+export interface FileItem extends FsItem {
+    readonly kind: 'file';
+    readonly references: ReadonlyArray<ReferenceItem>;
+    readonly uri: vscode.Uri;
+
+    getDocument(warmUpNext?: boolean): Thenable<vscode.TextDocument>;
+}
+
+export interface FolderItem extends FsItem {
+    readonly kind: 'folder';
+    readonly files: ReadonlyArray<FileItem>;
+    readonly folders: ReadonlyArray<FolderItem>;
+    readonly isEmpty: boolean
+}
+
+export interface ReferenceItem {
+    readonly kind: 'reference';
+    readonly parent: FileItem | undefined;
+    readonly location: vscode.Location;
+
+    move(fwd: boolean): ReferenceItem | undefined;
+}
+
+export interface ModelConfiguration {
+    readonly rootUris: vscode.Uri[];
+    readonly showFolders: boolean;
+}
+
+export interface Model {
+    readonly kind: 'model';
+
+    readonly uri: vscode.Uri;
+    readonly position: vscode.Position;
+
+    readonly root: FolderItem;
+    readonly onDidChange: vscode.Event<FileItem | FolderItem>;
+
+    readonly isEmpty: boolean;
+    readonly totalRefs: number;
+    readonly totalFiles: number;
+
+    readonly first: ReferenceItem | undefined;
+
+    get(uri: vscode.Uri): FileItem | undefined;
+    allFiles(): IterableIterator<FileItem>;
+    remove(item: FolderItem | FileItem |  ReferenceItem): void;
+}
+ 
+export function getDefaultConfiguration(): ModelConfiguration {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    const showFolders = vscode.workspace.getConfiguration().get<boolean>('references.treeView');
+    return {
+        rootUris: workspaceFolders === undefined ? [] : workspaceFolders.map((it) => it.uri),
+        showFolders: showFolders || false,
+    };
+}
+
+export function createModel(uri: vscode.Uri, position: vscode.Position, locations: vscode.Location[], configuration: ModelConfiguration) {
+    return new ModelImpl(uri, position, locations, configuration);
+}
+
+export async function createModelsFromLocation(uri: vscode.Uri, position: vscode.Position): Promise<Model | undefined> {
+    let locations = await vscode.commands.executeCommand<vscode.Location[]>('vscode.executeReferenceProvider', uri, position);
+    if (!locations) {
+        return undefined;
+    }
+    return new ModelImpl(uri, position, locations, getDefaultConfiguration());
+}
+
+class FolderItemImpl implements FolderItem {
+    _name: string;
+    _parent: FolderItemImpl | undefined;
+    _files: Array<FileItemImpl> = [];
+    _folders: Array<FolderItemImpl> = [];
+
+    constructor(name: string) {
+        this._name = name;
+    }
+
+    get kind(): 'folder' {
+        return 'folder';
+    }
+
+    get name(): string {
+        return this._name;
+    }
+
+    get parent(): FolderItem | undefined {
+        return this._parent;
+    }
+
+    get files(): ReadonlyArray<FileItem> {
+        return this._files;
+    }
+
+    get folders(): ReadonlyArray<FolderItem> {
+        return this._folders;
+    }
+
+    get firstFile(): FileItemImpl | undefined {
         if (this.folders.length > 0) {
-            return this.folders[0].firstFile;
+            return this._folders[0].firstFile;
         }
         if (this.files.length > 0) {
-            return this.files[0];
+            return this._files[0];
         }
         return undefined;
     }
 
-    get lastFile(): FileItem | undefined {
+    get lastFile(): FileItemImpl | undefined {
         if (this.files.length > 0) {
-            return _last(this.files);
+            return _last(this._files);
         }
         if (this.folders.length > 0) {
-            return _last(this.folders).lastFile;
+            return _last(this._folders).lastFile;
         }
         return undefined;
     }
 
-    get firstFolder(): FolderItem {
+    get firstFolder(): FolderItemImpl {
         if (this.folders.length > 0) {
-            return this.folders[0];
+            return this._folders[0];
         }
         return this;
     }
 
-    get lastFolder(): FolderItem {
+    get lastFolder(): FolderItemImpl {
         if (this.folders.length > 0) {
-            return _last(this.folders);
+            return _last(this._folders);
         }
         return this;
     }
 
-    get nextFile(): FileItem | undefined {
+    get nextFile(): FileItemImpl | undefined {
         const result = this.nextSibling;
         if (result !== undefined) {
             return result.firstFolder.firstFile;
         }
-        if (this.parent instanceof Model) {
+        const parent = this._parent;
+        if (parent === undefined) {
             return undefined;
-        } else {
-            if (this.parent.files.length > 0) {
-                return this.parent.files[0];
-            }
-            return this.parent.nextFile;
         }
+        if (parent._files.length > 0) {
+            return parent._files[0];
+        }
+        return parent.nextFile;
     }
 
-    get prevFile(): FileItem | undefined {
+    get prevFile(): FileItemImpl | undefined {
         const result = this.prevSibling;
         if (result !== undefined) {
             return result.lastFolder.lastFile;
         }
-        if (this.parent instanceof Model) {
+        const parent = this._parent;
+        if (parent === undefined) {
             return undefined;
-        } else {
-            return this.parent.prevFile;
         }
+        return parent.prevFile;
     }
 
-    get nextSibling(): FolderItem | undefined {
+    get nextSibling(): FolderItemImpl | undefined {
         return this._sibling(1);
     }
 
-    get prevSibling(): FolderItem | undefined {
+    get prevSibling(): FolderItemImpl | undefined {
         return this._sibling(-1);
     }
 
-    private _sibling(delta: number): FolderItem | undefined {
-        return _getSibling(this, this.parent.folders, delta);
+    private _sibling(delta: number): FolderItemImpl | undefined {
+        const parent = this._parent;
+        if (parent === undefined) {
+            return undefined;
+        }
+        return _getSibling(this, parent._folders, delta);
     }
 
-    move(fwd: boolean): ReferenceItem | undefined {
+    move(fwd: boolean): ReferenceItemImpl | undefined {
         if (fwd) {
             return this.nextFile === undefined ? undefined : this.nextFile.firstRef;
         } else {
@@ -94,23 +198,61 @@ export class FolderItem {
         }
     }
 
-    delete() {
-        _del(this.parent.folders, this);
+    addFolder(folder: FolderItemImpl) {
+        if (folder._parent !== undefined) {
+            throw new Error('Folder is already attached');
+        }
+        this._folders.push(folder);
+        folder._parent = this;
     }
 
-    isEmpty(): boolean {
+    addFile(file: FileItemImpl) {
+        if (file._parent !== undefined) {
+            throw new Error('File is already attached');
+        }
+        this._files.push(file);
+        file._parent = this;
+    }
+
+    delete() {
+        const parent = this._parent;
+        if (parent === undefined) {
+            throw new Error('Can\'t delete detached folder');
+        }
+        _del(parent._folders, this);
+        this._parent = undefined;
+    }
+
+    get isEmpty(): boolean {
         return this.folders.length === 0 && this.files.length === 0;
     }
 }
 
-export class FileItem  {
-    private _document: Thenable<vscode.TextDocument> | undefined;
-
+class FileItemImpl implements FileItem {
+    _document: Thenable<vscode.TextDocument> | undefined;
+    _references: Array<ReferenceItemImpl> = [];
+    _parent: FolderItemImpl | undefined = undefined;
+    
     constructor(
-        readonly uri: vscode.Uri,
-        readonly results: Array<ReferenceItem>,
-        readonly parent: Model | FolderItem
-    ) { }
+        readonly uri: vscode.Uri
+    ) {
+    }
+
+    get kind(): 'file' {
+        return 'file';
+    }
+
+    get parent(): FolderItem | undefined {
+        return this._parent;
+    }
+
+    get name(): string {
+        return 'abc';
+    }
+
+    get references(): ReadonlyArray<ReferenceItem> {
+        return this._references;
+    }
 
     getDocument(warmUpNext?: boolean): Thenable<vscode.TextDocument> {
         if (!this._document) {
@@ -122,68 +264,77 @@ export class FileItem  {
             // and when next document has not yet been loaded
             const item = this.move(true);;
             if (item) {
-                this._document.then(() => item.parent.getDocument(false))
+                this._document.then(() => {
+                    const parent = item._parent;
+                    if (parent !== undefined) {
+                        parent.getDocument(false);
+                    }
+                });
             }
         }
         return this._document;
     }
 
-    get name(): string {
-        const parts = this.uri.path.split('/');
-        return _last(parts);
+    get firstRef(): ReferenceItemImpl {
+        return this._references[0];
     }
 
-    get firstRef(): ReferenceItem {
-        return this.results[0];
+    get lastRef(): ReferenceItemImpl {
+        return _last(this._references);
     }
 
-    get lastRef(): ReferenceItem {
-        return _last(this.results);
-    }
-
-    get nextSibling(): FileItem | undefined {
+    get nextSibling(): FileItemImpl | undefined {
         return this._sibling(1);
     }
 
-    get prevSibling(): FileItem | undefined {
+    get prevSibling(): FileItemImpl | undefined {
         return this._sibling(-1);
     }
 
-    private _sibling(delta: number): FileItem | undefined {
-        return _getSibling(this, this.parent.files, delta);
+    private _sibling(delta: number): FileItemImpl | undefined {
+        const parent = this._parent;
+        if (parent === undefined) {
+            return undefined;
+        }
+        return _getSibling(this, parent._files, delta);
     }
 
-    get next(): FileItem | undefined { 
+    get next(): FileItemImpl | undefined { 
         const result = this.nextSibling;
         if (result !== undefined) {
             return result;
         }
-        const container = this.parent;
-        if (container instanceof Model) {
+        const parent = this._parent;
+        if (parent === undefined) {
             return undefined;
-        } else {
-            return container.nextFile;
         }
+        return parent.nextFile;
     }
 
-    get prev(): FileItem | undefined { 
+    get prev(): FileItemImpl | undefined { 
         const result = this.prevSibling;
         if (result !== undefined) {
             return result;
         }
-        const container = this.parent;
-        if (container.folders.length > 0) {
-            return _last(container.folders).lastFile;
-        } 
-
-        if (container instanceof Model) {
+        const parent = this._parent;
+        if (parent === undefined) {
             return undefined;
-        } else {
-            return container.prevFile;
         }
+        if (parent._folders.length > 0) {
+            return _last(parent._folders).lastFile;
+        } 
+        return parent.prevFile;
     }
 
-    move(fwd: boolean): ReferenceItem | undefined {
+    addRef(ref: ReferenceItemImpl) {
+        if (ref._parent !== undefined) {
+            throw new Error('Reference is already attached');
+        }
+        this._references.push(ref);
+        ref._parent = this;
+    }
+
+    move(fwd: boolean): ReferenceItemImpl | undefined {
         if (fwd) {
             const next = this.next;
             return next === undefined ? undefined : next.firstRef;
@@ -194,19 +345,34 @@ export class FileItem  {
     }
 
     delete() {
-        _del(this.parent.files, this);
+        const parent = this._parent;
+        if (parent === undefined) {
+            throw new Error('Can\'t delete detached file');
+        }
+        _del(parent._files, this);
+        this._parent = undefined;
     }
 
     isEmpty(): boolean {
-        return this.results.length === 0;
+        return this._references.length === 0;
     }
 }
 
-export class ReferenceItem {
+class ReferenceItemImpl implements ReferenceItem {
+    _parent: FileItemImpl | undefined;
+
     constructor(
-        readonly location: vscode.Location,
-        readonly parent: FileItem,
-    ) { }
+        readonly location: vscode.Location
+    )  {
+    }
+
+    get kind(): 'reference' {
+        return 'reference';
+    }
+
+    get parent(): FileItemImpl | undefined {
+        return this._parent;
+    }
 
     get nextSibling(): ReferenceItem | undefined {
         return this._sibling(1);
@@ -221,7 +387,11 @@ export class ReferenceItem {
         if (result !== undefined) {
             return result;
         }
-        const nextFile = this.parent.next;
+        const parent = this._parent;
+        if (parent == undefined) {
+            return undefined
+        }
+        const nextFile = parent.next;
         if (nextFile === undefined) {
             return undefined;
         }
@@ -233,7 +403,11 @@ export class ReferenceItem {
         if (result !== undefined) {
             return result;
         }
-        const prevFile = this.parent.prev;
+        const parent = this._parent;
+        if (parent === undefined) {
+            return undefined;
+        }
+        const prevFile = parent.prev;
         if (prevFile === undefined) {
             return undefined;
         }
@@ -241,7 +415,11 @@ export class ReferenceItem {
     }
 
     private _sibling(delta: number): ReferenceItem | undefined {
-        return _getSibling(this, this.parent.results, delta);
+        const parent = this.parent;
+        if (parent === undefined) {
+            return undefined;
+        }
+        return _getSibling(this, parent.references, delta);
     }
 
     move(fwd: boolean): ReferenceItem | undefined {
@@ -249,52 +427,28 @@ export class ReferenceItem {
     }
 
     delete() {
-        _del(this.parent.results, this);
-    }
-}
-
-export interface ModelConfiguration {
-    readonly rootUris: vscode.Uri[];
-    readonly showFolders: boolean;
-}
-
-export class Model {
-    static getDefaultConfiguration(): ModelConfiguration {
-        const workspaceFolders = vscode.workspace.workspaceFolders;
-        const showFolders = vscode.workspace.getConfiguration().get<boolean>('references.treeView');
-        return {
-            rootUris: workspaceFolders === undefined ? [] : workspaceFolders.map((it) => it.uri),
-            showFolders: showFolders || false,
-        };
-    }
-
-    static async create(uri: vscode.Uri, position: vscode.Position): Promise<Model | undefined> {
-        let locations = await vscode.commands.executeCommand<vscode.Location[]>('vscode.executeReferenceProvider', uri, position);
-        if (!locations) {
-            return undefined;
+        const parent = this._parent;
+        if (parent === undefined) {
+            throw new Error('Can\'t delete detached reference');
         }
-        return new Model(uri, position, locations, this.getDefaultConfiguration());
+        _del(parent._references, this);
+        this._parent = undefined;
     }
+}
 
-    private readonly _onDidChange = new vscode.EventEmitter<Model | FileItem | FolderItem >();
+class ModelImpl implements Model {
+    readonly _onDidChange = new vscode.EventEmitter<FileItem | FolderItem>();
     readonly onDidChange = this._onDidChange.event;
-
-    readonly folders: FolderItem[];
-    readonly files: FileItem[];
-    readonly configuration: ModelConfiguration;
+    readonly root: FolderItemImpl = new FolderItemImpl('');
 
     constructor(
         readonly uri: vscode.Uri,
         readonly position: vscode.Position,
         locations: vscode.Location[],
-        configuration: ModelConfiguration
+        readonly configuration: ModelConfiguration
     ) {
-        this.files = [];
-        this.folders = [];
-        this.configuration = configuration;
-
-        let last: FileItem | undefined;
-        locations.sort(Model._compareLocations);
+        let last: FileItemImpl | undefined;
+        locations.sort(ModelImpl._compareLocations);
         for (const loc of locations) {
             if (!last || last.uri.toString() !== loc.uri.toString()) {
                 if (this.configuration.showFolders) {
@@ -302,20 +456,139 @@ export class Model {
                     if (pathParts === undefined) {
                         continue;
                     }
-                    const fileTarget = this._getOrCreate(pathParts, this, this.folders);
-                    last = new FileItem(loc.uri, [], fileTarget);
-                    if (fileTarget instanceof FolderItem) {
-                        fileTarget.files.push(last);
-                    } else {
-                        this.files.push(last);
-                    }
+                    const fileTarget = this._getOrCreate(pathParts, this.root);
+                    last = new FileItemImpl(loc.uri);
+                    fileTarget.addFile(last);
                 } else {
-                    last = new FileItem(loc.uri, [], this);
-                    this.files.push(last);
+                    last = new FileItemImpl(loc.uri);
+                    this.root.addFile(last);
                 }
             }
-            last.results.push(new ReferenceItem(loc, last));
+            last.addRef(new ReferenceItemImpl(loc));
         }
+    }
+
+    get kind(): 'model' {
+        return 'model';
+    }
+
+    get isEmpty(): boolean {
+        return this.root.files.length === 0 && this.root.folders.length === 0;
+    }
+
+    get totalRefs(): number {
+        return this._count((f) => {
+            return f.references.length;
+        });
+    }
+
+    get totalFiles(): number {
+        return this._count((f) => 1);
+    }
+
+    private _count(leafCounter: (f: FileItem) => number): number {
+        let result = 0;
+        for (const file of this._allFilesIn(this.root)) {
+            result += leafCounter(file);
+        }
+        return result;
+    }
+
+    *allFiles(): IterableIterator<FileItemImpl> {
+        yield* this._allFilesIn(this.root);
+    }
+
+    private *_allFilesIn(item: FileItemImpl | FolderItemImpl): IterableIterator<FileItemImpl> {
+        if (item instanceof FileItemImpl) {
+            yield item;
+        } else {
+            for (let folder of item._folders) {
+                yield* this._allFilesIn(folder);
+            }
+            yield* item._files;
+        }
+    }
+
+    get(uri: vscode.Uri): FileItem | undefined {
+        for (const file of this.allFiles()) {
+            if (file.uri.toString() === uri.toString()) {
+                return file;
+            }
+        }
+        return undefined;
+    }
+
+    get first(): ReferenceItem | undefined {
+        for (const item of this.allFiles()) {
+            if (item.uri.toString() === this.uri.toString()) {
+                for (const ref of item.references) {
+                    if (ref.location.range.contains(this.position)) {
+                        return ref;
+                    }
+                }
+                return undefined;
+            }
+        }
+        return undefined;
+    }
+
+    private cleanupFile(file: FileItemImpl | undefined) {
+        if (file === undefined) {
+            return;
+        }
+        this._onDidChange.fire(file);
+
+        if (file.isEmpty) {
+            this.deleteFileOrFolder(file);
+        }
+    }
+
+    private cleanupFolder(folder: FolderItemImpl | undefined) {
+        if (folder === undefined) {
+            return;
+        }
+        this._onDidChange.fire(folder);
+        if (folder === this.root) {
+            return;
+        }
+        if (folder.isEmpty) {
+            this.deleteFileOrFolder(folder);
+        }
+    }
+
+    private deleteFileOrFolder(item: FileItemImpl | FolderItemImpl) {
+        const parent = item._parent;
+        item.delete();
+        this.cleanupFolder(parent);
+    }
+
+    remove(item: FileItem | FolderItem | ReferenceItem): void {
+        if (item instanceof ReferenceItemImpl) {
+            const parent = item._parent;
+            item.delete();
+            this.cleanupFile(parent);
+        } else if (item instanceof FileItemImpl || item instanceof FolderItemImpl) {
+            this.deleteFileOrFolder(item);
+        } else {
+            throw new Error('Unknown item : ' + item);
+        }
+    }
+
+
+    private _getOrCreate(path: string[], parent: FolderItemImpl): FolderItemImpl {
+        if (path.length === 0) {
+            return parent;
+        }
+        const first = path[0];
+        for (let child of parent._folders) {
+            if (child instanceof FolderItemImpl && child.name === first) {
+                return this._getOrCreate(path.slice(1), child) as FolderItemImpl;
+            }
+        }
+
+        const result = new FolderItemImpl(first);
+        parent.addFolder(result);
+        return this._getOrCreate(path.slice(1), result);
     }
 
     private _getContainerComponents(uri: vscode.Uri): string[] | undefined {
@@ -337,100 +610,6 @@ export class Model {
         return undefined;
     }
 
-    private _getOrCreate(path: string[], parent: Model | FolderItem, target: Array<FolderItem>): FolderItem | Model {
-        if (path.length === 0) {
-            return parent;
-        }
-        const first = path[0];
-        for (let child of target) {
-            if (child instanceof FolderItem && child.name === first) {
-                return this._getOrCreate(path.slice(1), child, child.folders) as FolderItem;
-            }
-        }
-    
-        const result = new FolderItem(first, parent, [], []);
-        target.push(result);
-        return this._getOrCreate(path.slice(1), result, result.folders);
-    }
-
-    get isEmpty(): boolean {
-        return this.files.length === 0 && this.folders.length === 0;
-    }
-
-    get totalRefs(): number {
-        return this._count((f) => {
-            return f.results.length;
-        });
-    }
-
-    get totalFiles(): number {
-        return this._count((f) => 1);
-    }
-
-    private _count(leafCounter: (f: FileItem) => number): number {
-        let result = 0;
-        for (const file of this._allFilesIn(this)) {
-            result += leafCounter(file);
-        }
-        return result;
-    }
-
-    *allFiles(): IterableIterator<FileItem> {
-        yield* this._allFilesIn(this);
-    }
-
-    private *_allFilesIn(item: Model | FileItem | FolderItem): IterableIterator<FileItem> {
-        if (item instanceof FileItem) {
-            yield item;
-        } else  {
-            for (let folder of item.folders) {
-                yield* this._allFilesIn(folder);
-            }
-            yield* item.files;
-        }
-    }
-
-    get(uri: vscode.Uri): FileItem | undefined {
-        for (const file of this.allFiles()) {
-            if (file.uri.toString() === uri.toString()) {
-                return file;
-            }
-        }
-        return undefined;
-    }
-
-    first(): ReferenceItem | undefined {
-        for (const item of this.allFiles()) {
-            if (item.uri.toString() === this.uri.toString()) {
-                for (const ref of item.results) {
-                    if (ref.location.range.contains(this.position)) {
-                        return ref;
-                    }
-                }
-                return undefined;
-            }
-        }
-        return undefined;
-    }
-
-    remove(item: FileItem | FolderItem | ReferenceItem): void {
-        let current = item;
-
-        while (true) {
-            const currentParent = current.parent;
-            if (current instanceof ReferenceItem || current.isEmpty() || current === item) {
-                current.delete();
-            } else {
-                return;
-            }
-            this._onDidChange.fire(currentParent);
-            if (currentParent instanceof Model) {
-                return;
-            }
-            current = currentParent;
-        }
-    }
-
     private static _compareLocations(a: vscode.Location, b: vscode.Location): number {
         if (a.uri.toString() < b.uri.toString()) {
             return -1;
@@ -444,9 +623,10 @@ export class Model {
             return 0;
         }
     }
+
 }
 
-function _getSibling<T>(item: T, siblings: T[], delta: number): T | undefined {
+function _getSibling<T>(item: T, siblings: ReadonlyArray<T>, delta: number): T | undefined {
     const index = siblings.indexOf(item);
     const nextIndex = index + delta;
     if (nextIndex < 0 || nextIndex >= siblings.length) {

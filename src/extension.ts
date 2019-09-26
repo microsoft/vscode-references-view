@@ -5,9 +5,11 @@
 
 import * as vscode from 'vscode';
 import { History, HistoryItem } from './history';
-import { Model, ReferenceItem, FileItem, FolderItem } from './model';
-import { DataProvider, getPreviewChunks } from './provider';
+import { Model, ReferenceItem, FileItem, getDefaultConfiguration, createModel, createModelsFromLocation } from './model';
+import { DataProvider, getPreviewChunks, TreeObject } from './provider';
 import { EditorHighlights } from './editorHighlights';
+
+type ContextObject = TreeObject | Model;
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -86,7 +88,7 @@ export function activate(context: vscode.ExtensionContext) {
         editorHighlights.setModel(model);
 
         // udate tree
-        const selection = model.first();
+        const selection = model.first;
         if (selection && view.visible) {
             view.reveal(selection, { select: true, focus: true });
         }
@@ -101,13 +103,13 @@ export function activate(context: vscode.ExtensionContext) {
         const model = await updateModel(() => {
             if (uri instanceof vscode.Uri && position instanceof vscode.Position) {
                 // trust args if correct'ish
-                return Model.create(uri, position);
+                return createModelsFromLocation(uri, position);
 
             } else if (vscode.window.activeTextEditor) {
                 // take args from active editor
                 let editor = vscode.window.activeTextEditor;
                 if (editor.document.getWordRangeAtPosition(editor.selection.active)) {
-                    return Model.create(editor.document.uri, editor.selection.active);
+                    return createModelsFromLocation(editor.document.uri, editor.selection.active);
                 }
             }
             return undefined;
@@ -155,15 +157,19 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.executeCommand('setContext', 'reference-list.hasHistory', false);
     }
 
-    const showRefCommand = (arg?: ReferenceItem | HistoryItem | any, focusEditor?: boolean) => {
-        if (arg instanceof ReferenceItem) {
+    const showRefCommand = (arg?: ContextObject, focusEditor?: boolean) => {
+        if (arg === undefined) {
+            return;
+        }
+
+        if (arg.kind === 'reference') {
             const { location } = arg;
             vscode.window.showTextDocument(location.uri, {
                 selection: location.range.with({ end: location.range.start }),
                 preserveFocus: !focusEditor
             });
 
-        } else if (arg instanceof HistoryItem) {
+        } else if (arg.kind === 'historyItem') {
             vscode.window.showTextDocument(arg.uri, {
                 selection: new vscode.Range(arg.position, arg.position),
                 preserveFocus: false
@@ -187,7 +193,7 @@ export function activate(context: vscode.ExtensionContext) {
         if (!model) {
             return;
         }
-        const selection = view.selection[0] || model.first();
+        const selection = view.selection[0] || model.first;
         if (selection instanceof HistoryItem) {
             return;
         }
@@ -198,26 +204,33 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
-    const copyCommand = async (arg?: ReferenceItem | FileItem | Model | any | undefined) => {
+    const copyCommand = async (arg?: ContextObject) => {
+        if (arg === undefined) {
+            return;
+        }
+
         let val = '';
         let stack = [arg];
         while (stack.length > 0) {
             let item = stack.pop();
-            if (item instanceof Model) {
+            if (item === undefined) {
+                throw new Error('This can\'t happen');
+            }
+            if (item.kind === 'model') {
                 let counter = 0;
                 for (let file of item.allFiles()) {
                     stack.push(file);
                     counter++;
                     if (counter === 100) break;
                 }
-            } else if (item instanceof ReferenceItem) {
-                let doc = await item.parent.getDocument()
+            } else if (item.kind === 'reference') {
+                let doc = await item.parent!.getDocument()
                 let chunks = getPreviewChunks(doc, item.location.range, 21, false);
                 val += `  ${item.location.range.start.line + 1},${item.location.range.start.character + 1}:${chunks.before + chunks.inside + chunks.after}\n`;
 
-            } else if (item instanceof FileItem) {
+            } else if (item.kind === 'file') {
                 val += `${vscode.workspace.asRelativePath(item.uri)}\n`;
-                stack.push(...item.results);
+                stack.push(...item.references);
             }
         }
         if (val) {
@@ -226,7 +239,7 @@ export function activate(context: vscode.ExtensionContext) {
     };
 
     const copyPathCommand = (arg?: FileItem) => {
-        if (arg instanceof FileItem) {
+        if (arg !== undefined) {
             if (arg.uri.scheme === 'file') {
                 vscode.env.clipboard.writeText(arg.uri.fsPath);
             } else {
@@ -252,7 +265,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const showReferences = async (uri: vscode.Uri, position: vscode.Position, locations: vscode.Location[]) => {
         await updateModel(() => {
-            return Promise.resolve(new Model(uri, position, locations, Model.getDefaultConfiguration()));
+            return Promise.resolve(createModel(uri, position, locations, getDefaultConfiguration()));
         });
     };
     let showReferencesDisposable: vscode.Disposable | undefined;

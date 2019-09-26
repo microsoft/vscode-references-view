@@ -21,7 +21,7 @@ export function getPreviewChunks(doc: vscode.TextDocument, range: vscode.Range, 
     return { before, inside, after }
 }
 
-type TreeObject = FileItem | FolderItem | ReferenceItem | HistoryItem;
+export type TreeObject = FileItem | FolderItem | ReferenceItem | HistoryItem;
 
 export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
 
@@ -49,7 +49,7 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
         if (modelCreation) {
             modelCreation.then(model => {
                 if (model && modelCreation === this._modelCreation) {
-                    this._modelListener = model.onDidChange(e => this._onDidChangeTreeData.fire(e instanceof FileItem ? e : undefined));
+                    this._modelListener = model.onDidChange(e => this._onDidChangeTreeData.fire(e.kind === 'file' ? e : undefined));
                 }
             })
         }
@@ -57,20 +57,17 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
 
     async getTreeItem(element: TreeObject): Promise<vscode.TreeItem> {
 
-        if (element instanceof FileItem) {
-            // files
+
+        if (element.kind === 'file') {
             const result = new vscode.TreeItem(element.uri);
             result.contextValue = 'file-item'
             result.description = true;
             result.iconPath = vscode.ThemeIcon.File;
             result.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
             return result;
-        }
-
-        if (element instanceof ReferenceItem) {
-            // references
+        } else if (element.kind === 'reference') {
             const { range } = element.location;
-            const doc = await element.parent.getDocument(true);
+            const doc = await element.parent!.getDocument(true);
 
             const { before, inside, after } = getPreviewChunks(doc, range);
 
@@ -88,10 +85,12 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
                 arguments: [element]
             }
             return result;
-        }
-
-        if (element instanceof HistoryItem) {
-            // history items
+        } else if (element.kind === 'folder') {
+            const result = new vscode.TreeItem(element.name);
+            result.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+            result.contextValue = 'folder-item';
+            return result;
+        } else if (element.kind === 'historyItem') {
             const result = new vscode.TreeItem(element.word);
             result.description = `${vscode.workspace.asRelativePath(element.uri)} • ${element.line}`;
             result.collapsibleState = vscode.TreeItemCollapsibleState.None;
@@ -104,45 +103,40 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
             return result;
         }
 
-        if (element instanceof FolderItem) {
-            // folder items
-            const result = new vscode.TreeItem(element.name);
-            result.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
-            result.contextValue = 'folder-item';
-            return result;
-        }
-
         throw new Error();
     }
 
     async getChildren(element?: TreeObject | undefined): Promise<TreeObject[]> {
-        if (element instanceof FileItem) {
-            return element.results;
-        } else if (element instanceof FolderItem) {
-            return [...element.folders, ...element.files];
-        } else if (this._modelCreation) {
-            const model = await this._modelCreation;
-            if (!model || model.isEmpty) {
-                return [...this._history];
+        if (element === undefined) {
+            if (this._modelCreation) {
+                const model = await this._modelCreation;
+                if (!model || model.isEmpty) {
+                    return [...this._history];
+                } else {
+                    return [...model.root.folders, ...model.root.files];
+                }
             } else {
-                return [...model.folders, ...model.files];
+                return [...this._history];
             }
         } else {
-            this._onDidReturnEmpty.fire(this);
-            return [...this._history];
+            if (element.kind === 'file') {
+                return element.references.slice(0);
+            } else if (element.kind === 'folder') {
+                return [...element.folders, ...element.files];
+            } else {
+                return [];
+            }
         }
+        
     }
 
     getParent(element: TreeObject): TreeObject | undefined {
-        if (element instanceof FileItem || element instanceof FolderItem) {
-            if (element.parent instanceof FolderItem) {
-                return element.parent;
-            }
+        if (element.kind === 'file' || element.kind === 'folder') {
+            return element.parent;
+        } else if (element.kind === 'reference') {
+            return element.parent;
+        } else {
             return undefined;
         }
-        if (element instanceof ReferenceItem) {
-            return element.parent;
-        }
-        return undefined;
     }
 }

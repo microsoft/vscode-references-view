@@ -17,6 +17,10 @@ export class HistoryItem {
         readonly word: string,
         readonly line: string,
     ) { }
+
+    get kind(): 'historyItem' {
+        return 'historyItem';
+    }
 }
 
 export class History {
