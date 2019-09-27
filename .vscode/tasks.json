@@ -18,6 +18,22 @@
                 "$ts-webpack"
             ],
             "isBackground": true
+        },
+        {
+            "type": "npm",
+            "script": "compile-test",
+            "presentation": {
+                "echo": true,
+                "reveal": "never",
+                "focus": false,
+                "panel": "shared",
+                "showReuseMessage": true,
+                "clear": false
+            },
+            "problemMatcher": [
+                "$tsc-watch"
+            ],
+            "isBackground": false
         }
     ]
 }

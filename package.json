@@ -258,15 +258,21 @@
   "scripts": {
     "vscode:prepublish": "webpack --mode production",
     "compile": "webpack --mode none",
+    "compile-test": "tsc -p . --outDir out/ --rootDir src/", 
     "watch": "webpack --mode none --watch",
     "postinstall": "node ./node_modules/vscode/bin/install"
   },
   "devDependencies": {
+    "@types/glob": "^7.1.1",
+    "@types/mocha": "^5.2.6",
     "@types/node": "^12.7.3",
+    "glob": "^7.1.4",
+		"mocha": "^6.1.4",
     "ts-loader": "^6.0.4",
     "typescript": "^3.6.2",
     "vscode": "1.1.36",
     "webpack": "^4.39.3",
-    "webpack-cli": "^3.3.7"
+    "webpack-cli": "^3.3.7",
+		"vscode-test": "^1.2.0"
   }
 }

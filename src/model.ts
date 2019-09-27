@@ -247,7 +247,7 @@ class FileItemImpl implements FileItem {
     }
 
     get name(): string {
-        return 'abc';
+        return _last(this.uri.path.split('/'));
     }
 
     get references(): ReadonlyArray<ReferenceItem> {
@@ -539,7 +539,7 @@ class ModelImpl implements Model {
         }
         this._onDidChange.fire(file);
 
-        if (file.isEmpty) {
+        if (file.isEmpty()) {
             this.deleteFileOrFolder(file);
         }
     }
@@ -600,7 +600,7 @@ class ModelImpl implements Model {
             if (uri.path.startsWith(folderUri.path)) {
                 const truncatedPath = uri.path.substring(folderUri.path.length);
                 const parts = truncatedPath.split('/');
-                let result = parts.slice(1, parts.length - 2);
+                let result = parts.slice(1, parts.length - 1);
                 if (rootUris.length === 1) {
                     return result;
                 } else {
