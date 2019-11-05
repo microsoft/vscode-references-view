@@ -3,7 +3,7 @@
   "displayName": "Reference Search View",
   "icon": "media/icon.png",
   "description": "Reference Search results as separate, stable view in the sidebar",
-  "version": "0.0.30",
+  "version": "0.0.31",
   "publisher": "ms-vscode",
   "engines": {
     "vscode": "^1.30.0"
@@ -132,7 +132,7 @@
         {
           "command": "references-view.find",
           "when": "editorHasReferenceProvider",
-          "group": "navigation@1.49"
+          "group": "0_navigation@1"
         }
       ],
       "view/title": [
