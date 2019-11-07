@@ -67,6 +67,11 @@
         "category": "References"
       },
       {
+        "command": "references-view.findImplementations",
+        "title": "Find All Implementations",
+        "category": "References"
+      },
+      {
         "command": "references-view.clearHistory",
         "title": "Clear History",
         "category": "References",
@@ -132,6 +137,11 @@
         {
           "command": "references-view.find",
           "when": "editorHasReferenceProvider",
+          "group": "0_navigation@2"
+        },
+        {
+          "command": "references-view.findImplementations",
+          "when": "editorHasImplementationProvider",
           "group": "0_navigation@1"
         }
       ],

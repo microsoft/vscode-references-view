@@ -38,14 +38,19 @@ export class ReferenceItem {
     ) { }
 }
 
+export const enum ModelSource {
+    References = 'vscode.executeReferenceProvider',
+    Implementations = 'vscode.executeImplementationProvider'
+}
+
 export class Model {
 
-    static async create(uri: vscode.Uri, position: vscode.Position): Promise<Model | undefined> {
-        let locations = await vscode.commands.executeCommand<vscode.Location[]>('vscode.executeReferenceProvider', uri, position);
+    static async create(uri: vscode.Uri, position: vscode.Position, source: ModelSource): Promise<Model | undefined> {
+        let locations = await vscode.commands.executeCommand<vscode.Location[]>(source, uri, position);
         if (!locations) {
             return undefined;
         }
-        return new Model(uri, position, locations);
+        return new Model(source, uri, position, locations);
     }
 
     private readonly _onDidChange = new vscode.EventEmitter<Model | FileItem>();
@@ -54,6 +59,7 @@ export class Model {
     readonly items: FileItem[];
 
     constructor(
+        readonly source: ModelSource,
         readonly uri: vscode.Uri,
         readonly position: vscode.Position,
         locations: vscode.Location[]

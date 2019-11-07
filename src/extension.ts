@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { History, HistoryItem } from './history';
-import { Model, ReferenceItem, FileItem } from './model';
+import { Model, ReferenceItem, FileItem, ModelSource } from './model';
 import { DataProvider, getPreviewChunks } from './provider';
 import { EditorHighlights } from './editorHighlights';
 
@@ -80,6 +80,13 @@ export function activate(context: vscode.ExtensionContext) {
             return showNoResult();
         }
 
+        // update title
+        if (model.source === ModelSource.References) {
+            view.title = 'References';
+        } else if (model.source === ModelSource.Implementations) {
+            view.title = 'Implementations';
+        }
+
         // update editor
         editorHighlights.setModel(model);
 
@@ -95,17 +102,17 @@ export function activate(context: vscode.ExtensionContext) {
         return model;
     }
 
-    const findCommand = async (uri?: vscode.Uri, position?: vscode.Position) => {
+    const findCommand = async (source: ModelSource, uri?: vscode.Uri, position?: vscode.Position) => {
         const model = await updateModel(() => {
             if (uri instanceof vscode.Uri && position instanceof vscode.Position) {
                 // trust args if correct'ish
-                return Model.create(uri, position);
+                return Model.create(uri, position, source);
 
             } else if (vscode.window.activeTextEditor) {
                 // take args from active editor
                 let editor = vscode.window.activeTextEditor;
                 if (editor.document.getWordRangeAtPosition(editor.selection.active)) {
-                    return Model.create(editor.document.uri, editor.selection.active);
+                    return Model.create(editor.document.uri, editor.selection.active, source);
                 }
             }
             return undefined;
@@ -120,13 +127,13 @@ export function activate(context: vscode.ExtensionContext) {
 
     const refindCommand = (item: HistoryItem) => {
         if (item instanceof HistoryItem) {
-            return findCommand(item.uri, item.position);
+            return findCommand(item.source, item.uri, item.position);
         }
     }
 
     const refreshCommand = async () => {
         if (model) {
-            return findCommand(model.uri, model.position);
+            return findCommand(model.source, model.uri, model.position);
         }
     }
 
@@ -246,7 +253,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const showReferences = async (uri: vscode.Uri, position: vscode.Position, locations: vscode.Location[]) => {
         await updateModel(() => {
-            return Promise.resolve(new Model(uri, position, locations));
+            return Promise.resolve(new Model(ModelSource.References, uri, position, locations));
         });
     };
     let showReferencesDisposable: vscode.Disposable | undefined;
@@ -269,7 +276,8 @@ export function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(
         view,
         vscode.workspace.onDidChangeConfiguration(updateShowReferences),
-        vscode.commands.registerCommand('references-view.find', findCommand),
+        vscode.commands.registerCommand('references-view.find', () => findCommand(ModelSource.References)),
+        vscode.commands.registerCommand('references-view.findImplementations', () => findCommand(ModelSource.Implementations)),
         vscode.commands.registerCommand('references-view.refind', refindCommand),
         vscode.commands.registerCommand('references-view.refresh', refreshCommand),
         vscode.commands.registerCommand('references-view.clear', clearCommand),

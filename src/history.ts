@@ -4,13 +4,14 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { Model } from './model';
+import { Model, ModelSource } from './model';
 import { getPreviewChunks } from './provider';
 
 
 export class HistoryItem {
     constructor(
         readonly id: string,
+        readonly source: ModelSource,
         readonly uri: vscode.Uri,
         readonly position: vscode.Position,
         readonly preview: string,
@@ -34,7 +35,7 @@ export class History {
         }
     }
 
-    async add({ uri, position }: Model): Promise<void> {
+    async add({ source, uri, position }: Model): Promise<void> {
 
         let doc: vscode.TextDocument;
         try {
@@ -65,6 +66,7 @@ export class History {
         this._items.delete(id);
         this._items.set(id, new HistoryItem(
             id,
+            source,
             uri,
             position,
             before + mdInside + after,

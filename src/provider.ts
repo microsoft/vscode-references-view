@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { FileItem, ReferenceItem, Model } from './model';
+import { FileItem, ReferenceItem, Model, ModelSource } from './model';
 import { History, HistoryItem } from './history';
 
 export function getPreviewChunks(doc: vscode.TextDocument, range: vscode.Range, beforeLen: number = 8, trim: boolean = true) {
@@ -91,9 +91,17 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
         }
 
         if (element instanceof HistoryItem) {
+
+            let source: string | undefined;
+            if (element.source === ModelSource.References) {
+                source = 'references';
+            } else if (element.source === ModelSource.Implementations) {
+                source = 'implementations';
+            }
+
             // history items
             const result = new vscode.TreeItem(element.word);
-            result.description = `${vscode.workspace.asRelativePath(element.uri)} • ${element.line}`;
+            result.description = `${vscode.workspace.asRelativePath(element.uri)} • ${element.line} ${source && ` • ${source}`}`;
             result.collapsibleState = vscode.TreeItemCollapsibleState.None;
             result.contextValue = 'history-item';
             result.command = {
