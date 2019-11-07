@@ -3,7 +3,7 @@
   "displayName": "Reference Search View",
   "icon": "media/icon.png",
   "description": "Reference Search results as separate, stable view in the sidebar",
-  "version": "0.0.32",
+  "version": "0.0.33",
   "publisher": "ms-vscode",
   "engines": {
     "vscode": "^1.39.0"
@@ -20,6 +20,7 @@
   ],
   "activationEvents": [
     "onCommand:references-view.find",
+    "onCommand:references-view.findImplementations",
     "onCommand:editor.action.showReferences",
     "onView:references-view.tree"
   ],
