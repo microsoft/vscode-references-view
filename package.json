@@ -264,7 +264,7 @@
   "scripts": {
     "vscode:prepublish": "webpack --mode production",
     "compile": "webpack --mode none",
-    "watch": "webpack --mode none --watch"
+    "watch": "webpack --mode none --watch --info-verbosity verbose"
   },
   "devDependencies": {
     "@types/vscode": "1.39.0",
