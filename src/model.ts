@@ -94,17 +94,46 @@ export class Model {
     }
 
     first(): ReferenceItem | undefined {
+        if (this.items.length === 0) {
+            return;
+        }
+        // NOTE: this.items is sorted by location (uri/range)
         for (const item of this.items) {
             if (item.uri.toString() === this.uri.toString()) {
+                // (1) pick the item at the request position
                 for (const ref of item.results) {
                     if (ref.location.range.contains(this.position)) {
                         return ref;
                     }
                 }
-                return undefined;
+                // (2) pick the first item after or last before the request position
+                let lastBefore: ReferenceItem | undefined
+                for (const ref of item.results) {
+                    if (ref.location.range.end.isAfter(this.position)) {
+                        return ref;
+                    }
+                    lastBefore = ref;
+                }
+                if (lastBefore) {
+                    return lastBefore;
+                }
+
+                break;
             }
         }
-        return undefined;
+
+        // (3) pick the file with the longest common prefix
+        let best = 0;
+        let bestValue = Model._prefixLen(this.items[best].toString(), this.uri.toString());
+
+        for (let i = 1; i < this.items.length; i++) {
+            let value = Model._prefixLen(this.items[i].uri.toString(), this.uri.toString());
+            if (value > bestValue) {
+                best = i;
+            }
+        }
+
+        return this.items[best].results[0];
     }
 
     remove(item: FileItem | ReferenceItem): void {
@@ -165,6 +194,14 @@ export class Model {
         } else {
             return 0;
         }
+    }
+
+    private static _prefixLen(a: string, b: string): number {
+        let pos = 0;
+        while (pos < a.length && pos < b.length && a.charCodeAt(pos) === b.charCodeAt(pos)) {
+            pos += 1;
+        }
+        return pos;
     }
 
     private static _del<T>(array: T[], e: T): void {
