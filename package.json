@@ -138,12 +138,12 @@
         {
           "command": "references-view.find",
           "when": "editorHasReferenceProvider",
-          "group": "0_navigation@2"
+          "group": "0_navigation@1"
         },
         {
           "command": "references-view.findImplementations",
           "when": "editorHasImplementationProvider",
-          "group": "0_navigation@1"
+          "group": "0_navigation@2"
         }
       ],
       "view/title": [
