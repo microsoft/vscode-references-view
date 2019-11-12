@@ -82,9 +82,9 @@ export function activate(context: vscode.ExtensionContext) {
 
         // update title
         if (model.source === ModelSource.References) {
-            view.title = 'References';
+            view.title = `Results (${model.total})`;
         } else if (model.source === ModelSource.Implementations) {
-            view.title = 'Implementations';
+            view.title = `Implementations (${model.total})`;
         }
 
         // update editor
