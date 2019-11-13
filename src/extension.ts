@@ -75,6 +75,7 @@ export function activate(context: vscode.ExtensionContext) {
         // wait for model, update context and UI
         model = await modelCreation;
         vscode.commands.executeCommand('setContext', 'reference-list.hasResult', Boolean(model));
+        vscode.commands.executeCommand('setContext', 'reference-list.source', model && model.source);
 
         if (!model || model.items.length === 0) {
             return showNoResult();
@@ -139,6 +140,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const clearResult = () => {
         vscode.commands.executeCommand('setContext', 'reference-list.hasResult', false);
+        vscode.commands.executeCommand('setContext', 'reference-list.source', undefined);
         editorHighlights.setModel(undefined);
         provider.setModelCreation(undefined);
     }
