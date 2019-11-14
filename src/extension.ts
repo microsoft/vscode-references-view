@@ -141,6 +141,7 @@ export function activate(context: vscode.ExtensionContext) {
     const clearResult = () => {
         vscode.commands.executeCommand('setContext', 'reference-list.hasResult', false);
         vscode.commands.executeCommand('setContext', 'reference-list.source', undefined);
+        view.title = 'Results';
         editorHighlights.setModel(undefined);
         provider.setModelCreation(undefined);
     }
@@ -150,7 +151,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         let lis = provider.onDidReturnEmpty(() => {
             lis.dispose();
-            view.message = `To populate this view, open an editor and run the 'Find All References'-command or run a previous search again:`;
+            view.message = `To populate this view, open an editor and run the 'Find All References' - command or run a previous search again: `;
         });
     }
 
@@ -216,10 +217,10 @@ export function activate(context: vscode.ExtensionContext) {
             } else if (item instanceof ReferenceItem) {
                 let doc = await item.parent.getDocument()
                 let chunks = getPreviewChunks(doc, item.location.range, 21, false);
-                val += `  ${item.location.range.start.line + 1},${item.location.range.start.character + 1}:${chunks.before + chunks.inside + chunks.after}\n`;
+                val += `  ${item.location.range.start.line + 1}, ${item.location.range.start.character + 1}: ${chunks.before + chunks.inside + chunks.after} \n`;
 
             } else if (item instanceof FileItem) {
-                val += `${vscode.workspace.asRelativePath(item.uri)}\n`;
+                val += `${vscode.workspace.asRelativePath(item.uri)} \n`;
                 stack.push(...item.results);
             }
         }
@@ -244,7 +245,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
         const picks = [...history].map(item => <HistoryPick>{
             label: item.word,
-            description: `${vscode.workspace.asRelativePath(item.uri)} • ${item.line}`,
+            description: `${vscode.workspace.asRelativePath(item.uri)} • ${item.line} `,
             item
         });
         const pick = await vscode.window.showQuickPick(picks, { placeHolder: 'Select previous reference search' });
