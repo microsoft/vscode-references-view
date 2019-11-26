@@ -6,7 +6,7 @@
   "version": "0.0.37",
   "publisher": "ms-vscode",
   "engines": {
-    "vscode": "^1.39.0"
+    "vscode": "^1.40.0"
   },
   "repository": {
     "type": "git",
@@ -22,7 +22,9 @@
     "onCommand:references-view.find",
     "onCommand:references-view.findImplementations",
     "onCommand:editor.action.showReferences",
-    "onView:references-view.tree"
+    "onView:references-view.tree",
+    "onCommand:calls-view.show",
+    "onView:calls-view.tree"
   ],
   "main": "./dist/extension",
   "contributes": {
@@ -58,6 +60,11 @@
           "id": "references-view.tree",
           "name": "Results",
           "when": "reference-list.isActive"
+        },
+        {
+          "id": "calls-view.tree",
+          "name": "Calls",
+          "when": "calls-view.isActive"
         }
       ]
     },
@@ -131,6 +138,32 @@
           "dark": "./media/action-refresh-dark.svg",
           "light": "./media/action-refresh.svg"
         }
+      },
+      {
+        "command": "calls-view.show",
+        "title": "Show Call Hierarchy",
+        "category": "Calls"
+      },
+      {
+        "command": "calls-view.clear",
+        "title": "Clear Call Hierarchy",
+        "category": "Calls",
+        "icon": {
+          "dark": "./media/action-clear-dark.svg",
+          "light": "./media/action-clear.svg"
+        }
+      },
+      {
+        "command": "calls-view.show.outgoing",
+        "title": "Show Outgoing Calls",
+        "category": "Calls",
+        "icon": "./media/action-call-from.svg"
+      },
+      {
+        "command": "calls-view.show.incoming",
+        "title": "Show Incoming Calls",
+        "category": "Calls",
+        "icon": "./media/action-call-to.svg"
       }
     ],
     "menus": {
@@ -144,6 +177,11 @@
           "command": "references-view.findImplementations",
           "when": "editorHasImplementationProvider",
           "group": "0_navigation@2"
+        },
+        {
+          "command": "calls-view.show",
+          "when": "editorHasCallHierarchyProvider",
+          "group": "0_navigation@3"
         }
       ],
       "view/title": [
@@ -160,7 +198,22 @@
         {
           "command": "references-view.clearHistory",
           "group": "navigation",
-          "when": "reference-list.hasHistory && !reference-list.hasResult"
+          "when": "view == references-view.tree && reference-list.hasHistory && !reference-list.hasResult"
+        },
+        {
+          "command": "calls-view.show.outgoing",
+          "group": "navigation",
+          "when": "view == calls-view.tree && calls-view.mode == showIncoming"
+        },
+        {
+          "command": "calls-view.show.incoming",
+          "group": "navigation",
+          "when": "view == calls-view.tree && calls-view.mode == showOutgoing"
+        },
+        {
+          "command": "calls-view.clear",
+          "group": "navigation",
+          "when": "view == calls-view.tree && calls-view.hasResults"
         }
       ],
       "view/item/context": [
@@ -267,11 +320,10 @@
     "watch": "webpack --mode none --watch --info-verbosity verbose"
   },
   "devDependencies": {
-    "@types/vscode": "1.39.0",
     "@types/node": "^12.7.3",
-    "ts-loader": "^6.0.4",
-    "typescript": "^3.6.2",
-    "webpack": "^4.39.3",
-    "webpack-cli": "^3.3.7"
+    "ts-loader": "~6.2.1",
+    "typescript": "~3.7.2",
+    "webpack": "~4.41.2",
+    "webpack-cli": "~3.3.10"
   }
 }
