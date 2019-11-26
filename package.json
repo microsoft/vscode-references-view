@@ -164,6 +164,15 @@
         "title": "Show Incoming Calls",
         "category": "Calls",
         "icon": "./media/action-call-to.svg"
+      },
+      {
+        "command": "calls-view.makeRoot",
+        "title": "Make Root",
+        "category": "Calls",
+        "icon": {
+          "dark": "./media/action-refresh-dark.svg",
+          "light": "./media/action-refresh.svg"
+        }
       }
     ],
     "menus": {
@@ -251,6 +260,11 @@
           "command": "references-view.copyAll",
           "group": "2@3",
           "when": "view == references-view.tree && viewItem != history-item"
+        },
+        {
+          "command": "calls-view.makeRoot",
+          "group": "inline",
+          "when": "view == calls-view.tree && viewItem == call-item"
         }
       ],
       "commandPalette": [

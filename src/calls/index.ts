@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { CallsDirection, CallsModel } from './model';
+import { CallsDirection, CallsModel, Call } from './model';
 import { DataProvider } from './provider';
 
 export function register(disposables: vscode.Disposable[]) {
@@ -66,6 +66,12 @@ export function register(disposables: vscode.Disposable[]) {
         updateModel(model);
     }
 
+    const makeRootCommand = (call: any) => {
+        if (call instanceof Call) {
+            return showCommand(call.item.uri, call.item.selectionRange.start);
+        }
+    }
+
     const clearCommand = () => {
         updateModel(undefined);
         view.message = `To populate this view, open an editor and run the 'Show Call Hierarchy'-command.`;
@@ -76,6 +82,7 @@ export function register(disposables: vscode.Disposable[]) {
         vscode.commands.registerCommand('calls-view.show', showCommand),
         vscode.commands.registerCommand('calls-view.show.outgoing', () => setModeCommand(CallsDirection.Outgoing)),
         vscode.commands.registerCommand('calls-view.show.incoming', () => setModeCommand(CallsDirection.Incoming)),
-        vscode.commands.registerCommand('calls-view.clear', clearCommand)
+        vscode.commands.registerCommand('calls-view.clear', clearCommand),
+        vscode.commands.registerCommand('calls-view.makeRoot', makeRootCommand),
     );
 }

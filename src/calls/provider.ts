@@ -26,6 +26,7 @@ export class DataProvider implements vscode.TreeDataProvider<Call> {
 
         const item = new vscode.TreeItem(element.item.name, vscode.TreeItemCollapsibleState.Collapsed);
         item.description = element.item.detail;
+        item.contextValue = 'call-item';
         item.resourceUri = element.item.uri; //todo@joh
         return item;
     }
