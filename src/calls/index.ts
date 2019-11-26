@@ -66,16 +66,25 @@ export function register(disposables: vscode.Disposable[]) {
         updateModel(model);
     }
 
+    const clearCommand = () => {
+        updateModel(undefined);
+        view.message = `To populate this view, open an editor and run the 'Show Call Hierarchy'-command.`;
+    };
+
     const makeRootCommand = (call: any) => {
         if (call instanceof Call) {
             return showCommand(call.item.uri, call.item.selectionRange.start);
         }
     }
 
-    const clearCommand = () => {
-        updateModel(undefined);
-        view.message = `To populate this view, open an editor and run the 'Show Call Hierarchy'-command.`;
-    };
+    const openCallCommand = (call: Call, focusEditor: boolean = false) => {
+        if (call instanceof Call) {
+            vscode.window.showTextDocument(call.item.uri, {
+                selection: call.item.selectionRange.with({ end: call.item.selectionRange.start }),
+                preserveFocus: !focusEditor
+            });
+        }
+    }
 
     disposables.push(
         view,
@@ -84,5 +93,6 @@ export function register(disposables: vscode.Disposable[]) {
         vscode.commands.registerCommand('calls-view.show.incoming', () => setModeCommand(CallsDirection.Incoming)),
         vscode.commands.registerCommand('calls-view.clear', clearCommand),
         vscode.commands.registerCommand('calls-view.makeRoot', makeRootCommand),
+        vscode.commands.registerCommand('calls-view.reveal', openCallCommand),
     );
 }

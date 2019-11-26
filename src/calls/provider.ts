@@ -28,6 +28,7 @@ export class DataProvider implements vscode.TreeDataProvider<Call> {
         item.description = element.item.detail;
         item.contextValue = 'call-item';
         item.resourceUri = element.item.uri; //todo@joh
+        item.command = { command: 'calls-view.reveal', title: 'Open Call', arguments: [element] }
         return item;
     }
 
