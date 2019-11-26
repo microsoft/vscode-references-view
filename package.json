@@ -63,7 +63,7 @@
         },
         {
           "id": "calls-view.tree",
-          "name": "Calls",
+          "name": "Call Hierarchy",
           "when": "calls-view.isActive"
         }
       ]
@@ -202,17 +202,17 @@
         },
         {
           "command": "calls-view.show.outgoing",
-          "group": "navigation",
+          "group": "navigation@1",
           "when": "view == calls-view.tree && calls-view.mode == showIncoming"
         },
         {
           "command": "calls-view.show.incoming",
-          "group": "navigation",
+          "group": "navigation@1",
           "when": "view == calls-view.tree && calls-view.mode == showOutgoing"
         },
         {
           "command": "calls-view.clear",
-          "group": "navigation",
+          "group": "navigation@2",
           "when": "view == calls-view.tree && calls-view.hasResults"
         }
       ],

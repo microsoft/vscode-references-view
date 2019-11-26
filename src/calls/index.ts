@@ -4,52 +4,35 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import { CallsDirection, CallsModel } from './model';
 import { DataProvider } from './provider';
-import { CallsModel, CallsDirection } from './model';
 
 export function register(disposables: vscode.Disposable[]) {
 
     const viewId = 'calls-view.tree';
     const provider = new DataProvider();
 
-    const view = vscode.window.createTreeView(viewId, {
-        treeDataProvider: provider,
-        showCollapseAll: true
-    });
-
+    const view = vscode.window.createTreeView(viewId, { treeDataProvider: provider });
 
     let callsDirection = CallsDirection.Outgoing;
     vscode.commands.executeCommand('setContext', 'calls-view.mode', 'showOutgoing');
 
-    const setDirectionToOutgoing = () => {
-        if (callsDirection !== CallsDirection.Outgoing) {
-            callsDirection = CallsDirection.Outgoing;
-            vscode.commands.executeCommand('setContext', 'calls-view.mode', 'showOutgoing');
-            refresh();
-        }
-    }
-
-    const setDirectionToIncoming = () => {
-        if (callsDirection !== CallsDirection.Incoming) {
-            callsDirection = CallsDirection.Incoming;
-            vscode.commands.executeCommand('setContext', 'calls-view.mode', 'showIncoming');
-            refresh();
-        }
-    }
-
-    const refresh = () => {
-        const { model } = provider;
-        if (model) {
-            updateModel(model.changeDirection());
-        } else {
-            showCallHierarchy();
+    const setModeCommand = (direction: CallsDirection) => {
+        if (callsDirection !== direction) {
+            callsDirection = direction;
+            vscode.commands.executeCommand('setContext', 'calls-view.mode', direction === CallsDirection.Incoming ? 'showIncoming' : 'showOutgoing');
+            if (provider.model) {
+                updateModel(provider.model.changeDirection());
+            } else {
+                showCommand();
+            }
         }
     }
 
     const updateModel = async (model: CallsModel | undefined) => {
 
         vscode.commands.executeCommand('setContext', 'calls-view.hasResults', Boolean(model));
-
+        view.message = '';
         provider.model = model;
         updateTitle();
         if (model) {
@@ -61,17 +44,17 @@ export function register(disposables: vscode.Disposable[]) {
     const updateTitle = () => {
         if (provider.model) {
             if (provider.model.direction === CallsDirection.Outgoing) {
-                view.title = `Calls From`;
+                view.title = `Call Hierarchy - Calls`;
             } else {
-                view.title = `Callers Of`;
+                view.title = `Call Hierarchy - Callers`;
             }
 
         } else {
-            view.title = 'Calls'
+            view.title = 'Call Hierarchy'
         }
     }
 
-    const showCallHierarchy = async (uri?: vscode.Uri, position?: vscode.Position) => {
+    const showCommand = async (uri?: vscode.Uri, position?: vscode.Position) => {
         let model: CallsModel | undefined;
         if (uri instanceof vscode.Uri && position instanceof vscode.Position) {
             model = new CallsModel(uri, position, callsDirection);
@@ -83,11 +66,16 @@ export function register(disposables: vscode.Disposable[]) {
         updateModel(model);
     }
 
+    const clearCommand = () => {
+        updateModel(undefined);
+        view.message = `To populate this view, open an editor and run the 'Show Call Hierarchy'-command.`;
+    };
+
     disposables.push(
         view,
-        vscode.commands.registerCommand('calls-view.show', showCallHierarchy),
-        vscode.commands.registerCommand('calls-view.show.outgoing', setDirectionToOutgoing),
-        vscode.commands.registerCommand('calls-view.show.incoming', setDirectionToIncoming),
-        vscode.commands.registerCommand('calls-view.clear', () => updateModel(undefined))
+        vscode.commands.registerCommand('calls-view.show', showCommand),
+        vscode.commands.registerCommand('calls-view.show.outgoing', () => setModeCommand(CallsDirection.Outgoing)),
+        vscode.commands.registerCommand('calls-view.show.incoming', () => setModeCommand(CallsDirection.Incoming)),
+        vscode.commands.registerCommand('calls-view.clear', clearCommand)
     );
 }
