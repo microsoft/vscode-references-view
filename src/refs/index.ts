@@ -22,8 +22,8 @@ export function register(disposables: vscode.Disposable[]) {
 
     // editor highlights
     const editorHighlights = new EditorHighlights();
-    vscode.window.onDidChangeActiveTextEditor(() => view.visible && editorHighlights.show(), disposables);
-    view.onDidChangeVisibility(e => e.visible ? editorHighlights.show() : editorHighlights.hide(), disposables);
+    vscode.window.onDidChangeActiveTextEditor(() => view.visible && editorHighlights.show(), undefined, disposables);
+    view.onDidChangeVisibility(e => e.visible ? editorHighlights.show() : editorHighlights.hide(), undefined, disposables);
 
     // current active model
     let model: Model | undefined;
