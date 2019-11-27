@@ -9,5 +9,5 @@ import * as calls from './calls';
 
 export function activate(context: vscode.ExtensionContext) {
     references.register(context.subscriptions);
-    calls.register(context.subscriptions);
+    calls.register(context.subscriptions, context.globalState);
 }

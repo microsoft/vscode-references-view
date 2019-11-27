@@ -9,7 +9,34 @@ import { DataProvider } from './provider';
 import { History, HistoryItem } from './history';
 import { EditorHighlights } from './editorHighlights';
 
-export function register(disposables: vscode.Disposable[]) {
+class RichCallsDirection {
+
+    private static _key = 'calls-view.mode';
+
+    constructor(
+        private _mem: vscode.Memento,
+        private _value: CallsDirection = CallsDirection.Incoming,
+    ) {
+        const raw = _mem.get<number>(RichCallsDirection._key);
+        if (typeof raw === 'number' && raw >= 0 && raw <= 1) {
+            this.value = raw;
+        } else {
+            this.value = _value;
+        }
+    }
+
+    get value() {
+        return this._value;
+    }
+
+    set value(value: CallsDirection) {
+        this._value = value;
+        vscode.commands.executeCommand('setContext', 'calls-view.mode', this._value === CallsDirection.Incoming ? 'showIncoming' : 'showOutgoing');
+        this._mem.update(RichCallsDirection._key, value);
+    }
+}
+
+export function register(disposables: vscode.Disposable[], memento: vscode.Memento) {
 
     const viewId = 'calls-view.tree';
     const history = new History();
@@ -22,18 +49,14 @@ export function register(disposables: vscode.Disposable[]) {
     view.onDidChangeVisibility(e => e.visible ? highlights.show() : highlights.hide(), undefined, disposables);
     view.onDidChangeSelection(() => highlights.refresh(), undefined, disposables);
 
-    let callsDirection = CallsDirection.Outgoing;
-    vscode.commands.executeCommand('setContext', 'calls-view.mode', 'showOutgoing');
+    const callsDirection = new RichCallsDirection(memento);
 
     const setModeCommand = (direction: CallsDirection) => {
-        if (callsDirection !== direction) {
-            callsDirection = direction;
-            vscode.commands.executeCommand('setContext', 'calls-view.mode', direction === CallsDirection.Incoming ? 'showIncoming' : 'showOutgoing');
-            if (provider.model) {
-                updateModel(provider.model.changeDirection());
-            } else {
-                showCommand();
-            }
+        callsDirection.value = direction;
+        if (provider.model) {
+            updateModel(provider.model.changeDirection());
+        } else {
+            showCommand();
         }
     }
 
@@ -67,9 +90,9 @@ export function register(disposables: vscode.Disposable[]) {
     const showCommand = async (uri?: vscode.Uri, position?: vscode.Position) => {
         let model: CallsModel | undefined;
         if (uri instanceof vscode.Uri && position instanceof vscode.Position) {
-            model = new CallsModel(uri, position, callsDirection);
+            model = new CallsModel(uri, position, callsDirection.value);
         } else if (vscode.window.activeTextEditor) {
-            model = new CallsModel(vscode.window.activeTextEditor.document.uri, vscode.window.activeTextEditor.selection.anchor, callsDirection);
+            model = new CallsModel(vscode.window.activeTextEditor.document.uri, vscode.window.activeTextEditor.selection.anchor, callsDirection.value);
         }
 
         vscode.commands.executeCommand('setContext', 'calls-view.isActive', true);
