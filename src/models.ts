@@ -280,7 +280,7 @@ export const enum CallsDirection {
 
 export class RichCallsDirection {
 
-    private static _key = 'calls-view.mode';
+    private static _key = 'references-view.callHierarchyMode';
 
     constructor(
         private _mem: vscode.Memento,

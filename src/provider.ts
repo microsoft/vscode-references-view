@@ -92,7 +92,7 @@ export class CallItemDataProvider implements vscode.TreeDataProvider<CallHierarc
         item.description = element.item.detail;
         item.contextValue = 'call-item';
         // item.iconPath = vscode.Uri.parse('vscode-icon://codicon/zap'); // todo@joh
-        item.command = { command: 'calls-view.reveal', title: 'Open Call', arguments: [element] };
+        item.command = { command: 'references-view.show', title: 'Open Call', arguments: [element] };
         item.collapsibleState = element.locations
             ? vscode.TreeItemCollapsibleState.Collapsed
             : vscode.TreeItemCollapsibleState.Expanded; // root item
