@@ -7,14 +7,20 @@ import * as vscode from 'vscode';
 import { CallsDirection, CallsModel, Call } from './model';
 import { DataProvider } from './provider';
 import { History, HistoryItem } from './history';
+import { EditorHighlights } from './editorHighlights';
 
 export function register(disposables: vscode.Disposable[]) {
 
     const viewId = 'calls-view.tree';
     const history = new History();
     const provider = new DataProvider(history);
-
     const view = vscode.window.createTreeView(viewId, { treeDataProvider: provider });
+
+    // highlight management
+    const highlights = new EditorHighlights(view);
+    vscode.window.onDidChangeActiveTextEditor(() => view.visible && highlights.refresh(), undefined, disposables);
+    view.onDidChangeVisibility(e => e.visible ? highlights.show() : highlights.hide(), undefined, disposables);
+    view.onDidChangeSelection(() => highlights.refresh(), undefined, disposables);
 
     let callsDirection = CallsDirection.Outgoing;
     vscode.commands.executeCommand('setContext', 'calls-view.mode', 'showOutgoing');
@@ -72,6 +78,7 @@ export function register(disposables: vscode.Disposable[]) {
 
     const clearCommand = () => {
         updateModel(undefined);
+        highlights.hide();
         if (history.items.length === 0) {
             view.message = `To populate this view, open an editor and run the 'Show Call Hierarchy'-command.`;
         } else {

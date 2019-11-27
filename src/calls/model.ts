@@ -12,7 +12,7 @@ export const enum CallsDirection {
 
 export class Call {
 
-    constructor(readonly item: vscode.CallHierarchyItem, readonly parent: Call | undefined, readonly location: vscode.Location[] | undefined) { }
+    constructor(readonly item: vscode.CallHierarchyItem, readonly parent: Call | undefined, readonly locations: vscode.Location[] | undefined) { }
 }
 
 export class CallsModel {
