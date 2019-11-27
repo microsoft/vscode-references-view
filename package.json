@@ -173,6 +173,15 @@
           "dark": "./media/action-refresh-dark.svg",
           "light": "./media/action-refresh.svg"
         }
+      },
+      {
+        "command": "calls-view.reshow",
+        "title": "Rerun",
+        "category": "Calls",
+        "icon": {
+          "dark": "./media/action-refresh-dark.svg",
+          "light": "./media/action-refresh.svg"
+        }
       }
     ],
     "menus": {
@@ -265,6 +274,11 @@
           "command": "calls-view.makeRoot",
           "group": "inline",
           "when": "view == calls-view.tree && viewItem == call-item"
+        },
+        {
+          "command": "calls-view.reshow",
+          "group": "inline",
+          "when": "view == calls-view.tree && viewItem == call-history-item"
         }
       ],
       "commandPalette": [
@@ -307,6 +321,10 @@
         {
           "command": "references-view.pickFromHistory",
           "when": "reference-list.isActive"
+        },
+        {
+          "command": "calls-view.reshow",
+          "when": "never"
         }
       ]
     },

@@ -6,11 +6,13 @@
 import * as vscode from 'vscode';
 import { CallsDirection, CallsModel, Call } from './model';
 import { DataProvider } from './provider';
+import { History, HistoryItem } from './history';
 
 export function register(disposables: vscode.Disposable[]) {
 
     const viewId = 'calls-view.tree';
-    const provider = new DataProvider();
+    const history = new History();
+    const provider = new DataProvider(history);
 
     const view = vscode.window.createTreeView(viewId, { treeDataProvider: provider });
 
@@ -38,6 +40,8 @@ export function register(disposables: vscode.Disposable[]) {
         if (model) {
             const [first] = await model.root;
             view.reveal(first, { expand: true });
+
+            history.add(first, model);
         }
     }
 
@@ -68,7 +72,11 @@ export function register(disposables: vscode.Disposable[]) {
 
     const clearCommand = () => {
         updateModel(undefined);
-        view.message = `To populate this view, open an editor and run the 'Show Call Hierarchy'-command.`;
+        if (history.items.length === 0) {
+            view.message = `To populate this view, open an editor and run the 'Show Call Hierarchy'-command.`;
+        } else {
+            view.message = `To populate this view, open an editor and run the 'Show Call Hierarchy'-command or run a previous search again:`;
+        }
     };
 
     const makeRootCommand = (call: any) => {
@@ -77,12 +85,31 @@ export function register(disposables: vscode.Disposable[]) {
         }
     }
 
-    const openCallCommand = (call: Call, focusEditor: boolean = false) => {
-        if (call instanceof Call) {
-            vscode.window.showTextDocument(call.item.uri, {
-                selection: call.item.selectionRange.with({ end: call.item.selectionRange.start }),
+    const openCallCommand = (arg: Call | HistoryItem, focusEditor: boolean = false) => {
+
+        let uri: vscode.Uri | undefined;
+        let pos: vscode.Position | undefined;
+
+        if (arg instanceof Call) {
+            uri = arg.item.uri;
+            pos = arg.item.selectionRange.start;
+        }
+        if (arg instanceof HistoryItem) {
+            uri = arg.uri;
+            pos = arg.position;
+        }
+
+        if (uri && pos) {
+            vscode.window.showTextDocument(uri, {
+                selection: new vscode.Range(pos, pos),
                 preserveFocus: !focusEditor
             });
+        }
+    }
+
+    const showFromHistoryCommand = (item: HistoryItem) => {
+        if (item instanceof HistoryItem) {
+            showCommand(item.uri, item.position);
         }
     }
 
@@ -94,5 +121,6 @@ export function register(disposables: vscode.Disposable[]) {
         vscode.commands.registerCommand('calls-view.clear', clearCommand),
         vscode.commands.registerCommand('calls-view.makeRoot', makeRootCommand),
         vscode.commands.registerCommand('calls-view.reveal', openCallCommand),
+        vscode.commands.registerCommand('calls-view.reshow', showFromHistoryCommand),
     );
 }
