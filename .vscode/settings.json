@@ -1,0 +1,7 @@
+{
+    "typescript.format.semicolons": "insert",
+    "editor.codeActionsOnSave": {
+        "source.fixAll": true,
+        "source.organizeImports": true
+    },
+}

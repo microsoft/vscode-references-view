@@ -4,8 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { Call } from './model';
-import { TreeObject } from './provider';
+import { FileItem, ReferencesModel } from './models';
 
 export class EditorHighlights {
 
@@ -16,27 +15,37 @@ export class EditorHighlights {
         overviewRulerColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
     });
 
-    constructor(readonly view: vscode.TreeView<TreeObject>) { }
+    private _model?: ReferencesModel;
+    private _modelListener?: vscode.Disposable;
+    private _ignore = new Set<FileItem>();
+
+    setModel(model?: ReferencesModel): void {
+        this._model = model;
+        this._ignore.clear();
+        if (this._modelListener) {
+            this._modelListener.dispose();
+        }
+        if (model) {
+            this.show();
+            this._modelListener = vscode.workspace.onDidChangeTextDocument(e => {
+                // add those items that have been changed to a 
+                // ignore list so that we won't update decorations
+                // for them again
+                this._ignore.add(model.get(e.document.uri)!);
+            });
+        } else {
+            this.hide();
+        }
+    }
 
     show() {
         const { activeTextEditor: editor } = vscode.window;
-        if (!editor) {
+        if (!editor || !this._model) {
             return;
         }
-        const [sel] = this.view.selection;
-        if (!(sel instanceof Call)) {
-            return
-        }
-        const call = sel;
-
-        if (call.locations) {
-            const ranges: vscode.Range[] = [];
-            for (const loc of call.locations) {
-                if (loc.uri.toString() === editor.document.uri.toString()) {
-                    ranges.push(loc.range);
-                }
-            }
-            editor.setDecorations(this._decorationType, ranges);
+        const item = this._model.get(editor.document.uri);
+        if (item && !this._ignore.has(item)) {
+            editor.setDecorations(this._decorationType, item.results.map(ref => ref.location.range));
         }
     }
 

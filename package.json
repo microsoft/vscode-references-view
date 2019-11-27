@@ -21,10 +21,9 @@
   "activationEvents": [
     "onCommand:references-view.find",
     "onCommand:references-view.findImplementations",
+    "onCommand:references-view.showCallHierarchy",
     "onCommand:editor.action.showReferences",
-    "onView:references-view.tree",
-    "onCommand:calls-view.show",
-    "onView:calls-view.tree"
+    "onView:references-view.tree"
   ],
   "main": "./dist/extension",
   "contributes": {
@@ -60,11 +59,6 @@
           "id": "references-view.tree",
           "name": "Results",
           "when": "reference-list.isActive"
-        },
-        {
-          "id": "calls-view.tree",
-          "name": "Call Hierarchy",
-          "when": "calls-view.isActive"
         }
       ]
     },
@@ -140,43 +134,25 @@
         }
       },
       {
-        "command": "calls-view.show",
+        "command": "references-view.showCallHierarchy",
         "title": "Show Call Hierarchy",
         "category": "Calls"
       },
       {
-        "command": "calls-view.clear",
-        "title": "Clear Call Hierarchy",
-        "category": "Calls",
-        "icon": {
-          "dark": "./media/action-clear-dark.svg",
-          "light": "./media/action-clear.svg"
-        }
-      },
-      {
-        "command": "calls-view.showOutgoing",
+        "command": "references-view.showOutgoingCalls",
         "title": "Show Outgoing Calls",
-        "category": "Calls",
-        "icon": "./media/action-call-from.svg"
-      },
-      {
-        "command": "calls-view.showIncoming",
-        "title": "Show Incoming Calls",
         "category": "Calls",
         "icon": "./media/action-call-to.svg"
       },
       {
-        "command": "calls-view.makeRoot",
-        "title": "Make Root",
+        "command": "references-view.showIncomingCalls",
+        "title": "Show Incoming Calls",
         "category": "Calls",
-        "icon": {
-          "dark": "./media/action-refresh-dark.svg",
-          "light": "./media/action-refresh.svg"
-        }
+        "icon": "./media/action-call-from.svg"
       },
       {
-        "command": "calls-view.reshow",
-        "title": "Rerun",
+        "command": "references-view.rerunCallHierarchy",
+        "title": "Rerun Call Hierarchy",
         "category": "Calls",
         "icon": {
           "dark": "./media/action-refresh-dark.svg",
@@ -197,48 +173,43 @@
           "group": "0_navigation@2"
         },
         {
-          "command": "calls-view.show",
+          "command": "references-view.showCallHierarchy",
           "when": "editorHasCallHierarchyProvider",
           "group": "0_navigation@3"
         }
       ],
       "view/title": [
         {
-          "command": "references-view.refresh",
-          "group": "navigation",
-          "when": "view == references-view.tree && reference-list.hasResult"
-        },
-        {
           "command": "references-view.clear",
-          "group": "navigation",
+          "group": "navigation@3",
           "when": "view == references-view.tree && reference-list.hasResult"
         },
         {
           "command": "references-view.clearHistory",
-          "group": "navigation",
+          "group": "navigation@3",
           "when": "view == references-view.tree && reference-list.hasHistory && !reference-list.hasResult"
         },
         {
-          "command": "calls-view.showOutgoing",
-          "group": "navigation@1",
-          "when": "view == calls-view.tree && calls-view.mode == showIncoming"
-        },
-        {
-          "command": "calls-view.showIncoming",
-          "group": "navigation@1",
-          "when": "view == calls-view.tree && calls-view.mode == showOutgoing"
-        },
-        {
-          "command": "calls-view.clear",
+          "command": "references-view.refresh",
           "group": "navigation@2",
-          "when": "view == calls-view.tree && calls-view.hasResults"
+          "when": "view == references-view.tree && reference-list.hasResult"
+        },
+        {
+          "command": "references-view.showOutgoingCalls",
+          "group": "navigation@1",
+          "when": "view == references-view.tree && reference-list.hasResult && reference-list.source == callHierarchy &&  references-view.callHierarchyMode == showIncoming"
+        },
+        {
+          "command": "references-view.showIncomingCalls",
+          "group": "navigation@1",
+          "when": "view == references-view.tree && reference-list.hasResult && reference-list.source == callHierarchy &&  references-view.callHierarchyMode == showOutgoing"
         }
       ],
       "view/item/context": [
         {
           "command": "references-view.remove",
           "group": "inline",
-          "when": "view == references-view.tree && viewItem != history-item"
+          "when": "view == references-view.tree && viewItem == file-item || view == references-view.tree && viewItem == reference-item"
         },
         {
           "command": "references-view.refind",
@@ -248,7 +219,7 @@
         {
           "command": "references-view.remove",
           "group": "1",
-          "when": "view == references-view.tree && viewItem != history-item"
+          "when": "view == references-view.tree && viewItem == file-item || view == references-view.tree && viewItem == reference-item"
         },
         {
           "command": "references-view.refind",
@@ -258,7 +229,7 @@
         {
           "command": "references-view.copy",
           "group": "2@1",
-          "when": "view == references-view.tree && viewItem != history-item"
+          "when": "view == references-view.tree && viewItem == file-item || view == references-view.tree && viewItem == reference-item"
         },
         {
           "command": "references-view.copyPath",
@@ -268,17 +239,12 @@
         {
           "command": "references-view.copyAll",
           "group": "2@3",
-          "when": "view == references-view.tree && viewItem != history-item"
+          "when": "view == references-view.tree && viewItem == file-item || view == references-view.tree && viewItem == reference-item"
         },
         {
-          "command": "calls-view.makeRoot",
+          "command": "references-view.rerunCallHierarchy",
           "group": "inline",
-          "when": "view == calls-view.tree && viewItem == call-item"
-        },
-        {
-          "command": "calls-view.reshow",
-          "group": "inline",
-          "when": "view == calls-view.tree && viewItem == call-history-item"
+          "when": "view == references-view.tree && viewItem == call-item"
         }
       ],
       "commandPalette": [
@@ -312,7 +278,7 @@
         },
         {
           "command": "references-view.clearHistory",
-          "when": "reference-list.isActive"
+          "when": "reference-list.isActive && !reference-list.hasResult"
         },
         {
           "command": "references-view.refresh",
@@ -323,11 +289,7 @@
           "when": "reference-list.isActive"
         },
         {
-          "command": "calls-view.makeRoot",
-          "when": "never"
-        },
-        {
-          "command": "calls-view.reshow",
+          "command": "references-view.rerunCallHierarchy",
           "when": "never"
         }
       ]
@@ -349,7 +311,7 @@
         "key": "shift+f4"
       },
       {
-        "command": "calls-view.show",
+        "command": "references-view.showCallHierarchy",
         "when": "editorHasCallHierarchyProvider",
         "key": "shift+alt+h"
       }
