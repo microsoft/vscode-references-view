@@ -323,6 +323,10 @@
           "when": "reference-list.isActive"
         },
         {
+          "command": "calls-view.makeRoot",
+          "when": "never"
+        },
+        {
           "command": "calls-view.reshow",
           "when": "never"
         }
