@@ -63,12 +63,12 @@ export function register(disposables: vscode.Disposable[], memento: vscode.Memen
     const updateModel = async (model: CallsModel | undefined) => {
 
         vscode.commands.executeCommand('setContext', 'calls-view.hasResults', Boolean(model));
-        view.message = '';
         provider.model = model;
+        view.message = '';
         updateTitle();
         if (model) {
             const [first] = await model.root;
-            view.reveal(first, { expand: true });
+            view.reveal(first, { expand: true, focus: true });
 
             history.add(first, model);
         }
@@ -146,8 +146,8 @@ export function register(disposables: vscode.Disposable[], memento: vscode.Memen
     disposables.push(
         view,
         vscode.commands.registerCommand('calls-view.show', showCommand),
-        vscode.commands.registerCommand('calls-view.show.outgoing', () => setModeCommand(CallsDirection.Outgoing)),
-        vscode.commands.registerCommand('calls-view.show.incoming', () => setModeCommand(CallsDirection.Incoming)),
+        vscode.commands.registerCommand('calls-view.showOutgoing', () => setModeCommand(CallsDirection.Outgoing)),
+        vscode.commands.registerCommand('calls-view.showIncoming', () => setModeCommand(CallsDirection.Incoming)),
         vscode.commands.registerCommand('calls-view.clear', clearCommand),
         vscode.commands.registerCommand('calls-view.makeRoot', makeRootCommand),
         vscode.commands.registerCommand('calls-view.reveal', openCallCommand),
