@@ -36,7 +36,7 @@ export class DataProvider implements vscode.TreeDataProvider<TreeObject> {
             const item = new vscode.TreeItem(element.item.name, vscode.TreeItemCollapsibleState.Collapsed);
             item.description = element.item.detail;
             item.contextValue = 'call-item';
-            // item.resourceUri = element.item.uri; //todo@joh
+            // item.iconPath = vscode.Uri.parse('vscode-icon://codicon/zap'); // todo@joh
             item.command = { command: 'calls-view.reveal', title: 'Open Call', arguments: [element] }
             return item;
 
