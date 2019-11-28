@@ -12,25 +12,17 @@ export class ReferencesProvider implements vscode.TreeDataProvider<FileItem | Re
     private readonly _onDidChangeTreeData = new vscode.EventEmitter<FileItem | ReferenceItem>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-    private _modelListener?: vscode.Disposable;
-    private _disposed = false;
+    private readonly _modelListener: vscode.Disposable;
 
     constructor(
-        private _modelCreation: Promise<ReferencesModel | undefined>
+        private _model: ReferencesModel
     ) {
-        _modelCreation.then(model => {
-            if (model && !this._disposed) {
-                this._modelListener = model.onDidChange(e => this._onDidChangeTreeData.fire(e instanceof FileItem ? e : undefined));
-            }
-        });
+        this._modelListener = _model.onDidChange(e => this._onDidChangeTreeData.fire(e instanceof FileItem ? e : undefined));
     }
 
     dispose(): void {
-        this._disposed = true;
         this._onDidChangeTreeData.dispose();
-        if (this._modelListener) {
-            this._modelListener.dispose();
-        }
+        this._modelListener.dispose();
     }
 
     async getTreeItem(element: FileItem | ReferenceItem): Promise<vscode.TreeItem> {
@@ -64,11 +56,12 @@ export class ReferencesProvider implements vscode.TreeDataProvider<FileItem | Re
     }
 
     async getChildren(element?: FileItem | ReferenceItem | undefined) {
-        if (element instanceof FileItem) {
+        if (!element) {
+            // group results by FileItem
+            return this._model.items;
+        } else if (element instanceof FileItem) {
+            // matches inside a file
             return element.results;
-        } else if (this._modelCreation) {
-            const model = await this._modelCreation;
-            return model?.items;
         }
     }
 
@@ -93,9 +86,7 @@ export class CallItemDataProvider implements vscode.TreeDataProvider<CallHierarc
         item.contextValue = 'call-item';
         // item.iconPath = vscode.Uri.parse('vscode-icon://codicon/zap'); // todo@joh
         item.command = { command: 'references-view.show', title: 'Open Call', arguments: [element] };
-        item.collapsibleState = element.locations
-            ? vscode.TreeItemCollapsibleState.Collapsed
-            : vscode.TreeItemCollapsibleState.Expanded; // root item
+        item.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
         return item;
     }
 
@@ -152,18 +143,31 @@ export type TreeItem = FileItem | ReferenceItem | HistoryItem | CallHierarchyIte
 
 export class TreeDataProviderWrapper<T> implements vscode.TreeDataProvider<T> {
 
-    private _provider?: Required<vscode.TreeDataProvider<T>>;
+    private _provider?: Required<vscode.TreeDataProvider<any>>;
     private _providerListener?: vscode.Disposable;
-    private _onDidChange = new vscode.EventEmitter<T | undefined | null>();
+    private _onDidChange = new vscode.EventEmitter<any>();
 
     readonly onDidChangeTreeData = this._onDidChange.event;
 
-    update(provider: Required<vscode.TreeDataProvider<T>>) {
+    update(model: ReferencesModel | CallsModel | History) {
         if (this._providerListener) {
             this._providerListener.dispose();
             this._providerListener = undefined;
         }
-        this._provider = provider;
+
+        if (this._provider && typeof (<vscode.Disposable><any>this._provider).dispose === 'function') {
+            (<vscode.Disposable><any>this._provider).dispose();
+            this._provider = undefined;
+        }
+
+        if (model instanceof ReferencesModel) {
+            this._provider = new ReferencesProvider(model);
+        } else if (model instanceof CallsModel) {
+            this._provider = new CallItemDataProvider(model);
+        } else {
+            this._provider = new HistoryDataProvider(model);
+        }
+
         this._onDidChange.fire();
         this._providerListener = this._provider.onDidChangeTreeData(e => this._onDidChange.fire(e));
     }

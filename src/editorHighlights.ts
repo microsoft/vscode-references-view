@@ -4,7 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { FileItem, ReferencesModel } from './models';
+import { CallItem, CallsModel, FileItem, ReferencesModel } from './models';
+import { TreeItem } from './provider';
 
 export class EditorHighlights {
 
@@ -15,37 +16,56 @@ export class EditorHighlights {
         overviewRulerColor: new vscode.ThemeColor('editor.findMatchHighlightBackground'),
     });
 
-    private _model?: ReferencesModel;
-    private _modelListener?: vscode.Disposable;
-    private _ignore = new Set<FileItem>();
+    private _model?: ReferencesModel | CallsModel;
+    private _listener?: vscode.Disposable;
+    private _ignore = new Set<FileItem | undefined>();
 
-    setModel(model?: ReferencesModel): void {
+    constructor(private readonly _view: vscode.TreeView<TreeItem>) { }
+
+    setModel(model?: ReferencesModel | CallsModel): void {
         this._model = model;
         this._ignore.clear();
-        if (this._modelListener) {
-            this._modelListener.dispose();
+        if (this._listener) {
+            this._listener.dispose();
         }
-        if (model) {
-            this.show();
-            this._modelListener = vscode.workspace.onDidChangeTextDocument(e => {
+
+        if (model instanceof ReferencesModel) {
+            this._listener = vscode.workspace.onDidChangeTextDocument(async e => {
                 // add those items that have been changed to a 
                 // ignore list so that we won't update decorations
                 // for them again
-                this._ignore.add(model.get(e.document.uri)!);
+                this._ignore.add(await model.get(e.document.uri));
             });
-        } else {
-            this.hide();
+
+        } else if (model instanceof CallsModel) {
+            this._listener = this._view.onDidChangeSelection(() => {
+                this.show();
+            });
         }
+
+        this.show();
     }
 
-    show() {
+    async show() {
         const { activeTextEditor: editor } = vscode.window;
-        if (!editor || !this._model) {
-            return;
-        }
-        const item = this._model.get(editor.document.uri);
-        if (item && !this._ignore.has(item)) {
-            editor.setDecorations(this._decorationType, item.results.map(ref => ref.location.range));
+        if (editor) {
+            const ranges: vscode.Range[] = [];
+            if (this._model instanceof ReferencesModel) {
+                const item = await this._model.get(editor.document.uri);
+                if (item && !this._ignore.has(item)) {
+                    ranges.push(...item.results.map(ref => ref.location.range));
+                }
+            } else if (this._model instanceof CallsModel) {
+                const [sel] = this._view.selection;
+                if (sel instanceof CallItem && sel.locations) {
+                    for (const loc of sel.locations) {
+                        if (loc.uri.toString() === editor.document.uri.toString()) {
+                            ranges.push(loc.range);
+                        }
+                    }
+                }
+            }
+            editor.setDecorations(this._decorationType, ranges);
         }
     }
 

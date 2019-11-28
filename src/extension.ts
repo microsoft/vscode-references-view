@@ -7,13 +7,12 @@ import * as vscode from 'vscode';
 import { EditorHighlights } from './editorHighlights';
 import { History, HistoryItem } from './history';
 import { CallItem, CallsDirection, CallsModel, FileItem, getPreviewChunks, ItemSource, ReferenceItem, ReferencesModel, RichCallsDirection } from './models';
-import { CallItemDataProvider, HistoryDataProvider, ReferencesProvider, TreeDataProviderWrapper, TreeItem } from './provider';
+import { TreeDataProviderWrapper, TreeItem } from './provider';
 
 export function activate(context: vscode.ExtensionContext) {
 
     const callsDirection = new RichCallsDirection(context.globalState);
     const history = new History();
-    const historyProvider = new HistoryDataProvider(history);
     const provider = new TreeDataProviderWrapper<TreeItem>();
 
     const viewId = 'references-view.tree';
@@ -30,12 +29,31 @@ export function activate(context: vscode.ExtensionContext) {
     });
 
     // editor highlights
-    const editorHighlights = new EditorHighlights();
+    const editorHighlights = new EditorHighlights(view);
     vscode.window.onDidChangeActiveTextEditor(() => view.visible && editorHighlights.show(), undefined, context.subscriptions);
     view.onDidChangeVisibility(e => e.visible ? editorHighlights.show() : editorHighlights.hide(), undefined, context.subscriptions);
 
     // current active model
     let model: ReferencesModel | CallsModel | undefined;
+
+    const updateModel = async (newModel: ReferencesModel | CallsModel | undefined) => {
+        model = newModel;
+
+        // update state
+        view.message = undefined;
+        editorHighlights.setModel(model);
+        vscode.commands.executeCommand('setContext', 'reference-list.hasResult', Boolean(model));
+        vscode.commands.executeCommand('setContext', 'reference-list.source', model?.source);
+
+        revealView();
+        provider.update(newModel || history);
+
+        if (newModel) {
+            showResultsMessage();
+        } else {
+            showNoResultsMessage();
+        }
+    };
 
     const showNoResultsMessage = () => {
         let message: string;
@@ -45,92 +63,83 @@ export function activate(context: vscode.ExtensionContext) {
             message = 'No results found. Run a previous search again:';
         }
         view.message = message;
+        view.title = 'Results';
     };
 
-    const showResultsMessage = () => {
+    const showResultsMessage = async () => {
         if (model instanceof ReferencesModel) {
-            if (model.total === 1 && model.items.length === 1) {
-                view.message = `${model.total} result in ${model.items.length} file`;
-            } else if (model.total === 1) {
-                view.message = `${model.total} result in ${model.items.length} files`;
-            } else if (model.items.length === 1) {
-                view.message = `${model.total} results in ${model.items.length} file`;
+
+            const total = await model.total();
+            const files = await (await model.items).length;
+
+            // update message
+            if (total === 1 && files === 1) {
+                view.message = `${total} result in ${files} file`;
+            } else if (total === 1) {
+                view.message = `${total} result in ${files} files`;
+            } else if (files === 1) {
+                view.message = `${total} results in ${files} file`;
             } else {
-                view.message = `${model.total} results in ${model.items.length} files`;
+                view.message = `${total} results in ${files} files`;
             }
+
+            // update title
+            if (model.source === ItemSource.References) {
+                view.title = `Results (${total})`;
+            } else if (model.source === ItemSource.Implementations) {
+                view.title = `Implementations (${total})`;
+            }
+
+        } else if (model instanceof CallsModel) {
+            // update title
+            if (model.direction === CallsDirection.Incoming) {
+                view.title = 'Callers Of';
+            } else {
+                view.title = 'Calls From';
+            }
+            view.message = '';
+
         } else {
             view.message = undefined;
+            view.title = 'Results';
         }
     };
 
-    const updateModel = async (createModel: () => Promise<ReferencesModel | undefined> | undefined): Promise<ReferencesModel | void> => {
-        revealView();
-
-        // remove existing highlights
-        editorHighlights.setModel(undefined);
-        view.message = undefined;
-
-        const modelCreation = createModel();
-
-        if (!modelCreation) {
-            return showNoResultsMessage();
-        }
-
-        // the model creation promise is passed to the provider so that the
-        // tree view can indicate loading, for everthing else we need to wait
-        // for the model to be resolved
-        provider.update(new ReferencesProvider(modelCreation));
+    const updateReferencesModel = async (model?: ReferencesModel) => {
 
         // wait for model, update context and UI
-        model = await modelCreation;
-        vscode.commands.executeCommand('setContext', 'reference-list.hasResult', Boolean(model));
-        vscode.commands.executeCommand('setContext', 'reference-list.source', model && model.source);
+        updateModel(model);
 
-        if (!model || model.items.length === 0) {
-            return showNoResultsMessage();
+        if (model) {
+            // bail out when having no results...
+            if ((await model.items).length === 0) {
+                updateModel(undefined);
+                return;
+            }
+            // reveal
+            const selection = await model.first();
+            if (selection && view.visible) {
+                view.reveal(selection, { select: true, focus: true });
+            }
+            // add to history
+            history.add(await model.asHistoryItem([model.source, model.uri, model.position]));
         }
-
-        if (history.add(await model.asHistoryItem([model.source, model.uri, model.position]))) {
-            vscode.commands.executeCommand('setContext', 'reference-list.hasHistory', true);
-        }
-
-        // update title
-        if (model.source === ItemSource.References) {
-            view.title = `Results (${model.total})`;
-        } else if (model.source === ItemSource.Implementations) {
-            view.title = `Implementations (${model.total})`;
-        }
-
-        // update editor
-        editorHighlights.setModel(model);
-
-        // udate tree
-        const selection = model.first();
-        if (selection && view.visible) {
-            view.reveal(selection, { select: true, focus: true });
-        }
-
-        // update message
-        showResultsMessage();
-
-        return model;
     };
 
     const findReferencesCommand = async (source: ItemSource, uri?: vscode.Uri, position?: vscode.Position) => {
-        return await updateModel(() => {
-            if (uri instanceof vscode.Uri && position instanceof vscode.Position) {
-                // trust args if correct'ish
-                return ReferencesModel.create(uri, position, source);
+        let model: ReferencesModel | undefined;
+        if (uri instanceof vscode.Uri && position instanceof vscode.Position) {
+            // trust args if correct'ish
+            model = ReferencesModel.create(uri, position, source);
 
-            } else if (vscode.window.activeTextEditor) {
-                // take args from active editor
-                let editor = vscode.window.activeTextEditor;
-                if (editor.document.getWordRangeAtPosition(editor.selection.active)) {
-                    return ReferencesModel.create(editor.document.uri, editor.selection.active, source);
-                }
+        } else if (vscode.window.activeTextEditor) {
+            // take args from active editor
+            let editor = vscode.window.activeTextEditor;
+            if (editor.document.getWordRangeAtPosition(editor.selection.active)) {
+                model = ReferencesModel.create(editor.document.uri, editor.selection.active, source);
             }
-            return undefined;
-        });
+        }
+        updateReferencesModel(model);
     };
 
     const refindCommand = (item: HistoryItem) => {
@@ -146,8 +155,9 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
-    const showCallHierarchyCommand = async (uri?: vscode.Uri, position?: vscode.Position, direction = callsDirection.value) => {
-        revealView();
+    const updateCallHierachyModel = async (uri?: vscode.Uri, position?: vscode.Position, direction = callsDirection.value) => {
+
+        let model: CallsModel | undefined;
 
         if (uri instanceof vscode.Uri && position instanceof vscode.Position) {
             // trust args if correct'ish
@@ -160,53 +170,44 @@ export function activate(context: vscode.ExtensionContext) {
                 model = new CallsModel(editor.document.uri, editor.selection.active, direction);
             }
         }
-        if (model instanceof CallsModel) {
-            vscode.commands.executeCommand('setContext', 'reference-list.hasResult', true);
-            vscode.commands.executeCommand('setContext', 'reference-list.source', 'callHierarchy');
 
-            provider.update(new CallItemDataProvider(model));
-            showResultsMessage();
-            view.title = model.direction === CallsDirection.Incoming ? 'Callers Of' : 'Calls From';
-            if (history.add(await model.asHistoryItem([uri, position, direction]))) {
-                vscode.commands.executeCommand('setContext', 'reference-list.hasHistory', true);
+        updateModel(model);
+
+        if (model instanceof CallsModel) {
+            if (await model.isEmpty()) {
+                updateModel(undefined);
+                return;
             }
+            // reveal
+            const selection = await model.first();
+            if (selection && view.visible) {
+                view.reveal(selection, { select: true, focus: true, expand: true });
+            }
+            // add to history
+            history.add(await model.asHistoryItem([model.uri, model.position, model.direction]));
         }
     };
 
     const setCallHierarchyDirectionCommand = async (direction: CallsDirection) => {
         callsDirection.value = direction;
         if (model instanceof CallsModel) {
-            showCallHierarchyCommand(model.uri, model.position, direction);
+            updateCallHierachyModel(model.uri, model.position, direction);
         }
     };
 
     const makeRootCommand = (call: any) => {
         if (call instanceof CallItem) {
-            return showCallHierarchyCommand(call.item.uri, call.item.selectionRange.start);
+            return updateCallHierachyModel(call.item.uri, call.item.selectionRange.start);
         }
     };
 
-    const clearResult = () => {
-        vscode.commands.executeCommand('setContext', 'reference-list.hasResult', false);
-        vscode.commands.executeCommand('setContext', 'reference-list.source', undefined);
-        view.title = 'Results';
-        editorHighlights.setModel(undefined);
-        provider.update(historyProvider);
-    };
-
     const clearCommand = async () => {
-        clearResult();
-
-        view.message = `To populate this view, open an editor and run the 'Find All References'-command or run a previous search again`;
-        provider.update(historyProvider);
+        updateModel(undefined);
     };
 
     const clearHistoryCommand = async () => {
-        clearResult();
         history.clear();
-        showNoResultsMessage();
-
-        vscode.commands.executeCommand('setContext', 'reference-list.hasHistory', false);
+        updateModel(undefined);
     };
 
     const showItemCommand = (arg?: ReferenceItem | HistoryItem | CallItem | any, focusEditor?: boolean) => {
@@ -271,7 +272,7 @@ export function activate(context: vscode.ExtensionContext) {
         while (stack.length > 0) {
             let item = stack.pop();
             if (item instanceof ReferencesModel) {
-                stack.push(...item.items.slice(0, 99));
+                stack.push(...(await item.items).slice(0, 99));
 
             } else if (item instanceof ReferenceItem) {
                 let doc = await item.parent.getDocument();
@@ -314,9 +315,7 @@ export function activate(context: vscode.ExtensionContext) {
     };
 
     const showReferences = async (uri: vscode.Uri, position: vscode.Position, locations: vscode.Location[]) => {
-        await updateModel(() => {
-            return Promise.resolve(new ReferencesModel(ItemSource.References, uri, position, locations));
-        });
+        await updateReferencesModel(new ReferencesModel(ItemSource.References, uri, position, Promise.resolve(locations)));
     };
     let showReferencesDisposable: vscode.Disposable | undefined;
     const config = 'references.preferredLocation';
@@ -341,7 +340,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('references-view.find', () => findReferencesCommand(ItemSource.References)),
         vscode.commands.registerCommand('references-view.findImplementations', () => findReferencesCommand(ItemSource.Implementations)),
         vscode.commands.registerCommand('references-view.refindReference', findReferencesCommand),
-        vscode.commands.registerCommand('references-view.showCallHierarchy', showCallHierarchyCommand),
+        vscode.commands.registerCommand('references-view.showCallHierarchy', updateCallHierachyModel),
         vscode.commands.registerCommand('references-view.showOutgoingCalls', () => setCallHierarchyDirectionCommand(CallsDirection.Outgoing)),
         vscode.commands.registerCommand('references-view.showIncomingCalls', () => setCallHierarchyDirectionCommand(CallsDirection.Incoming)),
         vscode.commands.registerCommand('references-view.rerunCallHierarchy', makeRootCommand),

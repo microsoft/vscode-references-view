@@ -40,14 +40,14 @@ export class FileItem {
         readonly parent: ReferencesModel
     ) { }
 
-    getDocument(warmUpNext?: boolean): Thenable<vscode.TextDocument> {
+    async getDocument(warmUpNext?: boolean) {
         if (!this._document) {
             this._document = vscode.workspace.openTextDocument(this.uri);
         }
         if (warmUpNext) {
             // load next document once this document has been loaded
             // and when next document has not yet been loaded
-            const item = this.parent.move(this, true);
+            const item = await this.parent.move(this, true);
             if (item && !item.parent._document) {
                 this._document.then(() => item.parent.getDocument(false));
             }
@@ -65,35 +65,41 @@ export class ReferenceItem {
 
 export class ReferencesModel {
 
-    static async create(uri: vscode.Uri, position: vscode.Position, source: ItemSource): Promise<ReferencesModel | undefined> {
-        let locations = await vscode.commands.executeCommand<vscode.Location[]>(source, uri, position);
-        if (!locations) {
-            return undefined;
-        }
+    static create(uri: vscode.Uri, position: vscode.Position, source: ItemSource): ReferencesModel {
+        const locations = Promise.resolve(vscode.commands.executeCommand<vscode.Location[]>(source, uri, position)).then(loc => {
+            if (!loc) {
+                return [];
+            } else {
+                return loc.sort(ReferencesModel._compareLocations);
+            }
+        });
         return new ReferencesModel(source, uri, position, locations);
     }
 
     private readonly _onDidChange = new vscode.EventEmitter<ReferencesModel | FileItem>();
     readonly onDidChange = this._onDidChange.event;
 
-    readonly items: FileItem[];
+    readonly items: Promise<FileItem[]>;
 
     constructor(
         readonly source: ItemSource,
         readonly uri: vscode.Uri,
         readonly position: vscode.Position,
-        locations: vscode.Location[]
+        locations: Promise<vscode.Location[]>
     ) {
-        this.items = [];
-        let last: FileItem | undefined;
-        locations.sort(ReferencesModel._compareLocations);
-        for (const loc of locations) {
-            if (!last || last.uri.toString() !== loc.uri.toString()) {
-                last = new FileItem(loc.uri, [], this);
-                this.items.push(last);
+        this.items = locations.then(locations => {
+            const items: FileItem[] = [];
+            let last: FileItem | undefined;
+            locations.sort(ReferencesModel._compareLocations);
+            for (const loc of locations) {
+                if (!last || last.uri.toString() !== loc.uri.toString()) {
+                    last = new FileItem(loc.uri, [], this);
+                    items.push(last);
+                }
+                last.results.push(new ReferenceItem(loc, last));
             }
-            last.results.push(new ReferenceItem(loc, last));
-        }
+            return items;
+        });
     }
 
     async asHistoryItem(args: any[]) {
@@ -127,16 +133,16 @@ export class ReferencesModel {
         );
     }
 
-    get total(): number {
+    async total(): Promise<number> {
         let n = 0;
-        for (const item of this.items) {
+        for (const item of await this.items) {
             n += item.results.length;
         }
         return n;
     }
 
-    get(uri: vscode.Uri): FileItem | undefined {
-        for (const item of this.items) {
+    async get(uri: vscode.Uri): Promise<FileItem | undefined> {
+        for (const item of await this.items) {
             if (item.uri.toString() === uri.toString()) {
                 return item;
             }
@@ -144,12 +150,15 @@ export class ReferencesModel {
         return undefined;
     }
 
-    first(): ReferenceItem | undefined {
-        if (this.items.length === 0) {
+    async first(): Promise<ReferenceItem | undefined> {
+
+        const items = await this.items;
+
+        if (items.length === 0) {
             return;
         }
         // NOTE: this.items is sorted by location (uri/range)
-        for (const item of this.items) {
+        for (const item of items) {
             if (item.uri.toString() === this.uri.toString()) {
                 // (1) pick the item at the request position
                 for (const ref of item.results) {
@@ -175,28 +184,28 @@ export class ReferencesModel {
 
         // (3) pick the file with the longest common prefix
         let best = 0;
-        let bestValue = ReferencesModel._prefixLen(this.items[best].toString(), this.uri.toString());
+        let bestValue = ReferencesModel._prefixLen(items[best].toString(), this.uri.toString());
 
-        for (let i = 1; i < this.items.length; i++) {
-            let value = ReferencesModel._prefixLen(this.items[i].uri.toString(), this.uri.toString());
+        for (let i = 1; i < items.length; i++) {
+            let value = ReferencesModel._prefixLen(items[i].uri.toString(), this.uri.toString());
             if (value > bestValue) {
                 best = i;
             }
         }
 
-        return this.items[best].results[0];
+        return items[best].results[0];
     }
 
-    remove(item: FileItem | ReferenceItem): void {
+    async remove(item: FileItem | ReferenceItem): Promise<void> {
 
         if (item instanceof FileItem) {
-            ReferencesModel._del(this.items, item);
+            ReferencesModel._del(await this.items, item);
             this._onDidChange.fire(this);
 
         } else if (item instanceof ReferenceItem) {
             ReferencesModel._del(item.parent.results, item);
             if (item.parent.results.length === 0) {
-                ReferencesModel._del(this.items, item.parent);
+                ReferencesModel._del(await this.items, item.parent);
                 this._onDidChange.fire(this);
             } else {
                 this._onDidChange.fire(item.parent);
@@ -204,13 +213,13 @@ export class ReferencesModel {
         }
     }
 
-    move(item: FileItem | ReferenceItem, fwd: boolean): ReferenceItem | undefined {
-
+    async move(item: FileItem | ReferenceItem, fwd: boolean): Promise<ReferenceItem | undefined> {
+        const items = await this.items;
         const delta = fwd ? +1 : -1;
 
         const _move = (item: FileItem): FileItem => {
-            const idx = (this.items.indexOf(item) + delta + this.items.length) % this.items.length;
-            return this.items[idx];
+            const idx = (items.indexOf(item) + delta + items.length) % items.length;
+            return items[idx];
         };
 
         if (item instanceof FileItem) {
@@ -315,6 +324,8 @@ export class CallItem {
 
 export class CallsModel {
 
+    readonly source = 'callHierarchy';
+
     readonly roots: Promise<CallItem[]>;
 
     constructor(readonly uri: vscode.Uri, readonly position: vscode.Position, readonly direction: CallsDirection) {
@@ -335,6 +346,15 @@ export class CallsModel {
 
     changeDirection(): CallsModel {
         return new CallsModel(this.uri, this.position, this.direction === CallsDirection.Incoming ? CallsDirection.Outgoing : CallsDirection.Incoming);
+    }
+
+    async isEmpty() {
+        return (await this.roots).length === 0;
+    }
+
+    async first() {
+        const [first] = await this.roots;
+        return first;
     }
 
     async asHistoryItem(args: any[]) {

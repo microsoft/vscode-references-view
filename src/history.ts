@@ -40,15 +40,14 @@ export class History {
         }
     }
 
-    add(item?: HistoryItem): boolean {
+    add(item?: HistoryItem): void {
         if (item) {
             // maps have filo-ordering and by delete-insert we make
             // sure to update the order for re-run queries
             this._items.delete(item.id);
             this._items.set(item.id, item);
-            return true;
+            vscode.commands.executeCommand('setContext', 'reference-list.hasHistory', true);
         }
-        return false;
     }
 
     get(id: string): HistoryItem | undefined {
@@ -57,5 +56,6 @@ export class History {
 
     clear(): void {
         this._items.clear();
+        vscode.commands.executeCommand('setContext', 'reference-list.hasHistory', false);
     }
 }
