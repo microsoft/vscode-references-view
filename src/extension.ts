@@ -58,9 +58,9 @@ export function activate(context: vscode.ExtensionContext) {
     const showNoResultsMessage = () => {
         let message: string;
         if (history.isEmpty) {
-            message = 'No results found.';
+            message = 'No results.';
         } else {
-            message = 'No results found. Run a previous search again:';
+            message = 'No results. Try running a previous search again:';
         }
         view.message = message;
         view.title = 'Results';
