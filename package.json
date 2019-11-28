@@ -3,10 +3,10 @@
   "displayName": "Reference Search View",
   "icon": "media/icon.png",
   "description": "Reference Search results as separate, stable view in the sidebar",
-  "version": "0.0.37",
+  "version": "0.0.38",
   "publisher": "ms-vscode",
   "engines": {
-    "vscode": "^1.39.0"
+    "vscode": "^1.40.0"
   },
   "repository": {
     "type": "git",
@@ -21,6 +21,7 @@
   "activationEvents": [
     "onCommand:references-view.find",
     "onCommand:references-view.findImplementations",
+    "onCommand:references-view.showCallHierarchy",
     "onCommand:editor.action.showReferences",
     "onView:references-view.tree"
   ],
@@ -131,6 +132,32 @@
           "dark": "./media/action-refresh-dark.svg",
           "light": "./media/action-refresh.svg"
         }
+      },
+      {
+        "command": "references-view.showCallHierarchy",
+        "title": "Show Call Hierarchy",
+        "category": "Calls"
+      },
+      {
+        "command": "references-view.showOutgoingCalls",
+        "title": "Show Outgoing Calls",
+        "category": "Calls",
+        "icon": "./media/action-call-to.svg"
+      },
+      {
+        "command": "references-view.showIncomingCalls",
+        "title": "Show Incoming Calls",
+        "category": "Calls",
+        "icon": "./media/action-call-from.svg"
+      },
+      {
+        "command": "references-view.rerunCallHierarchy",
+        "title": "Rerun Call Hierarchy",
+        "category": "Calls",
+        "icon": {
+          "dark": "./media/action-refresh-dark.svg",
+          "light": "./media/action-refresh.svg"
+        }
       }
     ],
     "menus": {
@@ -144,30 +171,45 @@
           "command": "references-view.findImplementations",
           "when": "editorHasImplementationProvider",
           "group": "0_navigation@2"
+        },
+        {
+          "command": "references-view.showCallHierarchy",
+          "when": "editorHasCallHierarchyProvider",
+          "group": "0_navigation@3"
         }
       ],
       "view/title": [
         {
-          "command": "references-view.refresh",
-          "group": "navigation",
-          "when": "view == references-view.tree && reference-list.hasResult"
-        },
-        {
           "command": "references-view.clear",
-          "group": "navigation",
+          "group": "navigation@3",
           "when": "view == references-view.tree && reference-list.hasResult"
         },
         {
           "command": "references-view.clearHistory",
-          "group": "navigation",
-          "when": "reference-list.hasHistory && !reference-list.hasResult"
+          "group": "navigation@3",
+          "when": "view == references-view.tree && reference-list.hasHistory && !reference-list.hasResult"
+        },
+        {
+          "command": "references-view.refresh",
+          "group": "navigation@2",
+          "when": "view == references-view.tree && reference-list.hasResult"
+        },
+        {
+          "command": "references-view.showOutgoingCalls",
+          "group": "navigation@1",
+          "when": "view == references-view.tree && reference-list.hasResult && reference-list.source == callHierarchy &&  references-view.callHierarchyMode == showIncoming"
+        },
+        {
+          "command": "references-view.showIncomingCalls",
+          "group": "navigation@1",
+          "when": "view == references-view.tree && reference-list.hasResult && reference-list.source == callHierarchy &&  references-view.callHierarchyMode == showOutgoing"
         }
       ],
       "view/item/context": [
         {
           "command": "references-view.remove",
           "group": "inline",
-          "when": "view == references-view.tree && viewItem != history-item"
+          "when": "view == references-view.tree && viewItem == file-item || view == references-view.tree && viewItem == reference-item"
         },
         {
           "command": "references-view.refind",
@@ -177,7 +219,7 @@
         {
           "command": "references-view.remove",
           "group": "1",
-          "when": "view == references-view.tree && viewItem != history-item"
+          "when": "view == references-view.tree && viewItem == file-item || view == references-view.tree && viewItem == reference-item"
         },
         {
           "command": "references-view.refind",
@@ -187,7 +229,7 @@
         {
           "command": "references-view.copy",
           "group": "2@1",
-          "when": "view == references-view.tree && viewItem != history-item"
+          "when": "view == references-view.tree && viewItem == file-item || view == references-view.tree && viewItem == reference-item"
         },
         {
           "command": "references-view.copyPath",
@@ -197,7 +239,12 @@
         {
           "command": "references-view.copyAll",
           "group": "2@3",
-          "when": "view == references-view.tree && viewItem != history-item"
+          "when": "view == references-view.tree && viewItem == file-item || view == references-view.tree && viewItem == reference-item"
+        },
+        {
+          "command": "references-view.rerunCallHierarchy",
+          "group": "inline",
+          "when": "view == references-view.tree && viewItem == call-item"
         }
       ],
       "commandPalette": [
@@ -231,7 +278,7 @@
         },
         {
           "command": "references-view.clearHistory",
-          "when": "reference-list.isActive"
+          "when": "reference-list.isActive && !reference-list.hasResult"
         },
         {
           "command": "references-view.refresh",
@@ -240,6 +287,10 @@
         {
           "command": "references-view.pickFromHistory",
           "when": "reference-list.isActive"
+        },
+        {
+          "command": "references-view.rerunCallHierarchy",
+          "when": "never"
         }
       ]
     },
@@ -258,6 +309,11 @@
         "command": "references-view.prev",
         "when": "reference-list.hasResult",
         "key": "shift+f4"
+      },
+      {
+        "command": "references-view.showCallHierarchy",
+        "when": "editorHasCallHierarchyProvider",
+        "key": "shift+alt+h"
       }
     ]
   },
@@ -267,11 +323,10 @@
     "watch": "webpack --mode none --watch --info-verbosity verbose"
   },
   "devDependencies": {
-    "@types/vscode": "1.39.0",
     "@types/node": "^12.7.3",
-    "ts-loader": "^6.0.4",
-    "typescript": "^3.6.2",
-    "webpack": "^4.39.3",
-    "webpack-cli": "^3.3.7"
+    "ts-loader": "~6.2.1",
+    "typescript": "~3.7.2",
+    "webpack": "~4.41.2",
+    "webpack-cli": "~3.3.10"
   }
 }
