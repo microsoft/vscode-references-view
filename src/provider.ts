@@ -84,7 +84,7 @@ export class CallItemDataProvider implements vscode.TreeDataProvider<CallHierarc
         const item = new vscode.TreeItem(element.item.name);
         item.description = element.item.detail;
         item.contextValue = 'call-item';
-        // item.iconPath = vscode.Uri.parse('vscode-icon://codicon/zap'); // todo@joh
+        item.iconPath = CallItemDataProvider._getThemeIcon(element.item.kind);
         item.command = { command: 'references-view.show', title: 'Open Call', arguments: [element] };
         item.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
         return item;
@@ -100,6 +100,41 @@ export class CallItemDataProvider implements vscode.TreeDataProvider<CallHierarc
 
     getParent(element: CallHierarchyItem) {
         return element.parent;
+    }
+
+    private static _themeIconIds = {
+        [vscode.SymbolKind.File]: 'symbol-file',
+        [vscode.SymbolKind.Module]: 'symbol-module',
+        [vscode.SymbolKind.Namespace]: 'symbol-namespace',
+        [vscode.SymbolKind.Package]: 'symbol-package',
+        [vscode.SymbolKind.Class]: 'symbol-class',
+        [vscode.SymbolKind.Method]: 'symbol-method',
+        [vscode.SymbolKind.Property]: 'symbol-property',
+        [vscode.SymbolKind.Field]: 'symbol-field',
+        [vscode.SymbolKind.Constructor]: 'symbol-constructor',
+        [vscode.SymbolKind.Enum]: 'symbol-enum',
+        [vscode.SymbolKind.Interface]: 'symbol-interface',
+        [vscode.SymbolKind.Function]: 'symbol-function',
+        [vscode.SymbolKind.Variable]: 'symbol-variable',
+        [vscode.SymbolKind.Constant]: 'symbol-constant',
+        [vscode.SymbolKind.String]: 'symbol-string',
+        [vscode.SymbolKind.Number]: 'symbol-number',
+        [vscode.SymbolKind.Boolean]: 'symbol-boolean',
+        [vscode.SymbolKind.Array]: 'symbol-array',
+        [vscode.SymbolKind.Object]: 'symbol-object',
+        [vscode.SymbolKind.Key]: 'symbol-key',
+        [vscode.SymbolKind.Null]: 'symbol-null',
+        [vscode.SymbolKind.EnumMember]: 'symbol-enum-member',
+        [vscode.SymbolKind.Struct]: 'symbol-struct',
+        [vscode.SymbolKind.Event]: 'symbol-event',
+        [vscode.SymbolKind.Operator]: 'symbol-operator',
+        [vscode.SymbolKind.TypeParameter]: 'symbol-type-parameter',
+    };
+
+    private static _getThemeIcon(kind: vscode.SymbolKind): vscode.ThemeIcon | undefined {
+        let id = CallItemDataProvider._themeIconIds[kind];
+        // @ts-ignore
+        return id && new vscode.ThemeIcon(id);
     }
 }
 
