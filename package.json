@@ -152,7 +152,7 @@
       },
       {
         "command": "references-view.rerunCallHierarchy",
-        "title": "Rerun Call Hierarchy",
+        "title": "Show Call Hierarchy",
         "category": "Calls",
         "icon": {
           "dark": "./media/action-refresh-dark.svg",
