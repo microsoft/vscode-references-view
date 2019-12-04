@@ -57,8 +57,12 @@ export class EditorHighlights {
                 }
             } else if (this._model instanceof CallsModel) {
                 const [sel] = this._view.selection;
-                if (sel instanceof CallItem && sel.locations) {
-                    for (const loc of sel.locations) {
+                if (sel instanceof CallItem) {
+                    let locations = sel.locations;
+                    if (!locations) {
+                        locations = [new vscode.Location(sel.item.uri, sel.item.selectionRange)];
+                    }
+                    for (const loc of locations) {
                         if (loc.uri.toString() === editor.document.uri.toString()) {
                             ranges.push(loc.range);
                         }
