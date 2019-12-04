@@ -142,13 +142,19 @@
         "command": "references-view.showOutgoingCalls",
         "title": "Show Outgoing Calls",
         "category": "Calls",
-        "icon": "./media/action-call-to.svg"
+        "icon": {
+          "dark": "./media/action-call-to-dark.svg",
+          "light": "./media/action-call-to.svg"
+        }
       },
       {
         "command": "references-view.showIncomingCalls",
         "title": "Show Incoming Calls",
         "category": "Calls",
-        "icon": "./media/action-call-from.svg"
+        "icon": {
+          "dark": "./media/action-call-from-dark.svg",
+          "light": "./media/action-call-from.svg"
+        }
       }
     ],
     "menus": {
