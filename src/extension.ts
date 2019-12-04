@@ -188,16 +188,13 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
-    const setCallHierarchyDirectionCommand = async (direction: CallsDirection) => {
+    const setCallHierarchyDirectionCommand = async (direction: CallsDirection, arg: any) => {
         callsDirection.value = direction;
-        if (model instanceof CallsModel) {
-            updateCallHierachyModel(model.uri, model.position, direction);
-        }
-    };
+        if (arg instanceof CallItem) {
+            return updateCallHierachyModel(arg.item.uri, arg.item.selectionRange.start, direction);
 
-    const makeRootCommand = (call: any) => {
-        if (call instanceof CallItem) {
-            return updateCallHierachyModel(call.item.uri, call.item.selectionRange.start);
+        } else if (model instanceof CallsModel) {
+            return updateCallHierachyModel(model.uri, model.position, direction);
         }
     };
 
@@ -341,9 +338,8 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('references-view.findImplementations', () => findReferencesCommand(ItemSource.Implementations)),
         vscode.commands.registerCommand('references-view.refindReference', findReferencesCommand),
         vscode.commands.registerCommand('references-view.showCallHierarchy', updateCallHierachyModel),
-        vscode.commands.registerCommand('references-view.showOutgoingCalls', () => setCallHierarchyDirectionCommand(CallsDirection.Outgoing)),
-        vscode.commands.registerCommand('references-view.showIncomingCalls', () => setCallHierarchyDirectionCommand(CallsDirection.Incoming)),
-        vscode.commands.registerCommand('references-view.rerunCallHierarchy', makeRootCommand),
+        vscode.commands.registerCommand('references-view.showOutgoingCalls', (arg) => setCallHierarchyDirectionCommand(CallsDirection.Outgoing, arg)),
+        vscode.commands.registerCommand('references-view.showIncomingCalls', (arg) => setCallHierarchyDirectionCommand(CallsDirection.Incoming, arg)),
         vscode.commands.registerCommand('references-view.refind', refindCommand),
         vscode.commands.registerCommand('references-view.refresh', refreshCommand),
         vscode.commands.registerCommand('references-view.clear', clearCommand),
