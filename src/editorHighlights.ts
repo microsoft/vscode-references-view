@@ -48,7 +48,7 @@ export class EditorHighlights {
 
     async show() {
         const { activeTextEditor: editor } = vscode.window;
-        if (editor) {
+        if (editor && editor.viewColumn) {
             const ranges: vscode.Range[] = [];
             if (this._model instanceof ReferencesModel) {
                 const item = await this._model.get(editor.document.uri);
@@ -74,8 +74,7 @@ export class EditorHighlights {
     }
 
     hide() {
-        const { activeTextEditor: editor } = vscode.window;
-        if (editor) {
+        for (const editor of vscode.window.visibleTextEditors) {
             editor.setDecorations(this._decorationType, []);
         }
     }
