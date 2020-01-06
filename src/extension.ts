@@ -23,7 +23,7 @@ export function activate(context: vscode.ExtensionContext) {
         await vscode.commands.executeCommand(`${viewId}.focus`);
     };
 
-    const view = vscode.window.createTreeView(viewId, {
+    const view = vscode.window.createTreeView<FileItem | ReferenceItem | CallItem>(viewId, {
         treeDataProvider: provider,
         showCollapseAll: true
     });
@@ -236,9 +236,9 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
-    const removeRefCommand = (arg?: ReferenceItem | any) => {
+    const removeRefCommand = async (arg?: ReferenceItem | any) => {
         if (model instanceof ReferencesModel) {
-            const next = model.move(arg, true);
+            const next = await model.move(arg, true);
             model.remove(arg);
             editorHighlights.refresh();
             showResultsMessage();
@@ -248,7 +248,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
-    const focusRefCommand = (fwd: boolean) => {
+    const focusRefCommand = async (fwd: boolean) => {
         if (!(model instanceof ReferencesModel)) {
             return;
         }
@@ -256,7 +256,7 @@ export function activate(context: vscode.ExtensionContext) {
         if (selection instanceof HistoryItem || selection instanceof CallItem) {
             return;
         }
-        const next = model.move(selection, fwd);
+        const next = await model.move(selection, fwd);
         if (next) {
             view.reveal(next, { select: true });
             showItemCommand(next, true);
