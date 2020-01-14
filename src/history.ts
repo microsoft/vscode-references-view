@@ -10,7 +10,7 @@ export class HistoryItem {
     static makeId(...args: any[]): string {
         let str = '';
         for (const a of args) {
-            str += String(a);
+            str += JSON.stringify(a);
         }
         return Buffer.from(str).toString('base64');
     }
