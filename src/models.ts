@@ -6,6 +6,15 @@
 import * as vscode from 'vscode';
 import { HistoryItem } from './history';
 
+
+export function getRequestRange(doc: vscode.TextDocument, pos: vscode.Position): vscode.Range | undefined {
+    let range = doc.getWordRangeAtPosition(pos);
+    if (!range) {
+        range = doc.getWordRangeAtPosition(pos, /[^\s]+/);
+    }
+    return range;
+}
+
 export function getPreviewChunks(doc: vscode.TextDocument, range: vscode.Range, beforeLen: number = 8, trim: boolean = true) {
     let previewStart = range.start.with({ character: Math.max(0, range.start.character - beforeLen) });
     let wordRange = doc.getWordRangeAtPosition(previewStart);
@@ -109,7 +118,7 @@ export class ReferencesModel {
         } catch (e) {
             return;
         }
-        const range = doc.getWordRangeAtPosition(this.position);
+        const range = getRequestRange(doc, this.position);
         if (!range) {
             return;
         }

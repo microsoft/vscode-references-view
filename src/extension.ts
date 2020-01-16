@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import { EditorHighlights } from './editorHighlights';
 import { History, HistoryItem } from './history';
-import { CallItem, CallsDirection, CallsModel, FileItem, getPreviewChunks, ItemSource, ReferenceItem, ReferencesModel, RichCallsDirection } from './models';
+import { CallItem, CallsDirection, CallsModel, FileItem, getPreviewChunks, getRequestRange, ItemSource, ReferenceItem, ReferencesModel, RichCallsDirection } from './models';
 import { TreeDataProviderWrapper, TreeItem } from './provider';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -135,7 +135,7 @@ export function activate(context: vscode.ExtensionContext) {
         } else if (vscode.window.activeTextEditor) {
             // take args from active editor
             let editor = vscode.window.activeTextEditor;
-            if (editor.document.getWordRangeAtPosition(editor.selection.active)) {
+            if (getRequestRange(editor.document, editor.selection.active)) {
                 model = ReferencesModel.create(editor.document.uri, editor.selection.active, source);
             }
         }
@@ -166,7 +166,7 @@ export function activate(context: vscode.ExtensionContext) {
         } else if (vscode.window.activeTextEditor) {
             // take args from active editor
             let editor = vscode.window.activeTextEditor;
-            if (editor.document.getWordRangeAtPosition(editor.selection.active)) {
+            if (getRequestRange(editor.document, editor.selection.active)) {
                 model = new CallsModel(editor.document.uri, editor.selection.active, direction);
             }
         }
