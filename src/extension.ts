@@ -236,10 +236,16 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
-    const removeRefCommand = async (arg?: ReferenceItem | any) => {
+    const removeRefCommand = async (arg?: ReferenceItem | FileItem | any) => {
         if (model instanceof ReferencesModel) {
-            const next = await model.move(arg, true);
-            model.remove(arg);
+            let next: ReferenceItem | undefined;
+            if (arg instanceof ReferenceItem) {
+                next = await model.move(arg, true);
+                if (next?.parent !== arg.parent) {
+                    next = undefined;
+                }
+            }
+            await model.remove(arg);
             editorHighlights.refresh();
             showResultsMessage();
             if (next) {
