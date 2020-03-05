@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { HistoryItem } from './history';
+import { HistoryItem, WordAnchor } from './history';
 
 
 export function getRequestRange(doc: vscode.TextDocument, pos: vscode.Position): vscode.Range | undefined {
@@ -151,9 +151,10 @@ export class ReferencesModel {
             HistoryItem.makeId(this.source, this.uri, this.position),
             inside,
             `${vscode.workspace.asRelativePath(this.uri)} • ${preview} • ${source}`,
-            { arguments: args, title: '', command: 'references-view.refindReference' },
+            'references-view.refindReference',
+            args,
             this.uri,
-            this.position
+            new WordAnchor(doc, this.position)
         );
     }
 
@@ -386,13 +387,15 @@ export class CallsModel {
         const [first] = await this.roots;
         const source = this.direction === CallsDirection.Incoming ? 'calls from' : 'callers of';
 
+
         return new HistoryItem(
             HistoryItem.makeId(first.item.uri, first.item.selectionRange.start.line, first.item.selectionRange.start.character, this.direction),
             first.item.name,
-            `${vscode.workspace.asRelativePath(this.uri)}  • ${source}`,
-            { arguments: args, title: '', command: 'references-view.showCallHierarchy' },
+            `${vscode.workspace.asRelativePath(this.uri)} • ${source}`,
+            'references-view.showCallHierarchy',
+            args,
             this.uri,
-            this.position
+            new WordAnchor(await vscode.workspace.openTextDocument(this.uri), this.position)
         );
     }
 }

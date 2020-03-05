@@ -124,7 +124,7 @@ export function activate(context: vscode.ExtensionContext) {
                 view.reveal(selection, { select: true, focus: true });
             }
             // add to history
-            history.add(await model.asHistoryItem([model.source, model.uri, model.position]));
+            history.add(await model.asHistoryItem([model.source]));
         }
     };
 
@@ -146,7 +146,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const refindCommand = (item: HistoryItem) => {
         if (item instanceof HistoryItem) {
-            vscode.commands.executeCommand(item.command.command, ...item.command.arguments!);
+            vscode.commands.executeCommand(item.commandId, ...[...item.extraArgs, item.uri, item.anchor.getPosition()]);
         }
     };
 
@@ -157,7 +157,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
-    const updateCallHierachyModel = async (uri?: vscode.Uri, position?: vscode.Position, direction = callsDirection.value) => {
+    const updateCallHierachyModel = async (direction = callsDirection.value, uri?: vscode.Uri, position?: vscode.Position) => {
 
         let model: CallsModel | undefined;
 
@@ -186,17 +186,17 @@ export function activate(context: vscode.ExtensionContext) {
                 view.reveal(selection, { select: true, focus: true, expand: true });
             }
             // add to history
-            history.add(await model.asHistoryItem([model.uri, model.position, model.direction]));
+            history.add(await model.asHistoryItem([model.direction]));
         }
     };
 
     const setCallHierarchyDirectionCommand = async (direction: CallsDirection, arg: any) => {
         callsDirection.value = direction;
         if (arg instanceof CallItem) {
-            return updateCallHierachyModel(arg.item.uri, arg.item.selectionRange.start, direction);
+            return updateCallHierachyModel(direction, arg.item.uri, arg.item.selectionRange.start);
 
         } else if (model instanceof CallsModel) {
-            return updateCallHierachyModel(model.uri, model.position, direction);
+            return updateCallHierachyModel(direction, model.uri, model.position);
         }
     };
 
@@ -226,7 +226,7 @@ export function activate(context: vscode.ExtensionContext) {
 
         } else if (arg instanceof HistoryItem) {
             uri = arg.uri;
-            pos = arg.position;
+            pos = arg.anchor.getPosition();
             preserveFocus = false;
         }
 
