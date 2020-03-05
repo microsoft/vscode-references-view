@@ -4,6 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import { Context } from './models';
 
 export class HistoryItem {
 
@@ -46,7 +47,7 @@ export class History {
             // sure to update the order for re-run queries
             this._items.delete(item.id);
             this._items.set(item.id, item);
-            vscode.commands.executeCommand('setContext', 'reference-list.hasHistory', true);
+            Context.HasHistory.set(true);
         }
     }
 
@@ -56,6 +57,6 @@ export class History {
 
     clear(): void {
         this._items.clear();
-        vscode.commands.executeCommand('setContext', 'reference-list.hasHistory', false);
+        Context.HasHistory.set(false);
     }
 }

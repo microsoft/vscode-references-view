@@ -29,6 +29,21 @@ export function getPreviewChunks(doc: vscode.TextDocument, range: vscode.Range, 
     return { before, inside, after };
 }
 
+export class Context<V> {
+
+    static IsActive = new Context<boolean>('reference-list.isActive');
+    static Source = new Context<ItemSource | 'callHierarchy' | undefined>('reference-list.source');
+    static HasResult = new Context<boolean>('reference-list.hasResult');
+    static HasHistory = new Context<boolean>('reference-list.hasHistory');
+    static CallHierarchyMode = new Context<'showOutgoing' | 'showIncoming'>('references-view.callHierarchyMode');
+
+    private constructor(readonly name: string) { }
+
+    async set(value: V) {
+        vscode.commands.executeCommand('setContext', this.name, value);
+    }
+}
+
 export const enum ItemSource {
     References = 'vscode.executeReferenceProvider',
     Implementations = 'vscode.executeImplementationProvider',
@@ -318,7 +333,7 @@ export class RichCallsDirection {
 
     set value(value: CallsDirection) {
         this._value = value;
-        vscode.commands.executeCommand('setContext', 'references-view.callHierarchyMode', this._value === CallsDirection.Incoming ? 'showIncoming' : 'showOutgoing');
+        Context.CallHierarchyMode.set(this._value === CallsDirection.Incoming ? 'showIncoming' : 'showOutgoing');
         this._mem.update(RichCallsDirection._key, value);
     }
 }

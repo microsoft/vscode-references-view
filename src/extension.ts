@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import { EditorHighlights } from './editorHighlights';
 import { History, HistoryItem } from './history';
-import { CallItem, CallsDirection, CallsModel, FileItem, getPreviewChunks, getRequestRange, ItemSource, ReferenceItem, ReferencesModel, RichCallsDirection } from './models';
+import { CallItem, CallsDirection, CallsModel, Context, FileItem, getPreviewChunks, getRequestRange, ItemSource, ReferenceItem, ReferencesModel, RichCallsDirection } from './models';
 import { TreeDataProviderWrapper, TreeItem } from './provider';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -19,7 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     const revealView = async () => {
         // upon first interaction set the reference list as active and reveal it
-        await vscode.commands.executeCommand('setContext', 'reference-list.isActive', true);
+        await Context.IsActive.set(true);
         await vscode.commands.executeCommand(`${viewId}.focus`);
     };
 
@@ -42,8 +42,10 @@ export function activate(context: vscode.ExtensionContext) {
         // update state
         view.message = undefined;
         editorHighlights.setModel(model);
-        vscode.commands.executeCommand('setContext', 'reference-list.hasResult', Boolean(model));
-        vscode.commands.executeCommand('setContext', 'reference-list.source', model?.source);
+
+        // update context
+        Context.HasResult.set(Boolean(model));
+        Context.Source.set(model?.source);
 
         revealView();
         provider.update(newModel || history);
