@@ -51,7 +51,7 @@ export function activate(context: vscode.ExtensionContext) {
         provider.update(newModel || history);
 
         if (newModel) {
-            showResultsMessage();
+            await showResultsMessage();
         } else {
             showNoResultsMessage();
         }
@@ -72,7 +72,7 @@ export function activate(context: vscode.ExtensionContext) {
         if (model instanceof ReferencesModel) {
 
             const total = await model.total();
-            const files = await (await model.items).length;
+            const files = (await model.items).length;
 
             // update message
             if (total === 1 && files === 1) {
@@ -110,12 +110,12 @@ export function activate(context: vscode.ExtensionContext) {
     const updateReferencesModel = async (model?: ReferencesModel) => {
 
         // wait for model, update context and UI
-        updateModel(model);
+        await updateModel(model);
 
         if (model) {
             // bail out when having no results...
             if ((await model.items).length === 0) {
-                updateModel(undefined);
+                await updateModel(undefined);
                 return;
             }
             // reveal
@@ -173,11 +173,11 @@ export function activate(context: vscode.ExtensionContext) {
             }
         }
 
-        updateModel(model);
+        await updateModel(model);
 
         if (model instanceof CallsModel) {
             if (await model.isEmpty()) {
-                updateModel(undefined);
+                await updateModel(undefined);
                 return;
             }
             // reveal
@@ -201,12 +201,12 @@ export function activate(context: vscode.ExtensionContext) {
     };
 
     const clearCommand = async () => {
-        updateModel(undefined);
+        await updateModel(undefined);
     };
 
     const clearHistoryCommand = async () => {
         history.clear();
-        updateModel(undefined);
+        await updateModel(undefined);
     };
 
     const showItemCommand = (arg?: ReferenceItem | HistoryItem | CallItem | any, focusEditor?: boolean) => {
