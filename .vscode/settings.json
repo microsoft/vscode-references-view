@@ -1,6 +1,7 @@
 {
     "typescript.format.semicolons": "insert",
     "typescript.tsserver.experimental.enableProjectDiagnostics": true,
+    "typescript.referencesCodeLens.enabled": true,
     "editor.codeActionsOnSave": {
         "source.fixAll": true,
         "source.organizeImports": true
