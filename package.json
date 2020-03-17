@@ -77,28 +77,19 @@
         "command": "references-view.clearHistory",
         "title": "Clear History",
         "category": "References",
-        "icon": {
-          "dark": "./media/action-clear-dark.svg",
-          "light": "./media/action-clear.svg"
-        }
+        "icon": "$(clear-all)"
       },
       {
         "command": "references-view.clear",
         "title": "Clear",
         "category": "References",
-        "icon": {
-          "dark": "./media/action-clear-dark.svg",
-          "light": "./media/action-clear.svg"
-        }
+        "icon": "$(clear-all)"
       },
       {
         "command": "references-view.refresh",
         "title": "Refresh",
         "category": "References",
-        "icon": {
-          "dark": "./media/action-refresh-dark.svg",
-          "light": "./media/action-refresh.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "references-view.pickFromHistory",
@@ -108,10 +99,7 @@
       {
         "command": "references-view.remove",
         "title": "Dismiss",
-        "icon": {
-          "dark": "./media/action-remove-dark.svg",
-          "light": "./media/action-remove.svg"
-        }
+        "icon": "$(close)"
       },
       {
         "command": "references-view.copy",
@@ -128,10 +116,7 @@
       {
         "command": "references-view.refind",
         "title": "Rerun",
-        "icon": {
-          "dark": "./media/action-refresh-dark.svg",
-          "light": "./media/action-refresh.svg"
-        }
+        "icon": "$(refresh)"
       },
       {
         "command": "references-view.showCallHierarchy",
@@ -142,19 +127,13 @@
         "command": "references-view.showOutgoingCalls",
         "title": "Show Outgoing Calls",
         "category": "Calls",
-        "icon": {
-          "dark": "./media/action-call-to-dark.svg",
-          "light": "./media/action-call-to.svg"
-        }
+        "icon": "$(call-outgoing)"
       },
       {
         "command": "references-view.showIncomingCalls",
         "title": "Show Incoming Calls",
         "category": "Calls",
-        "icon": {
-          "dark": "./media/action-call-from-dark.svg",
-          "light": "./media/action-call-from.svg"
-        }
+        "icon": "$(call-incoming)"
       }
     ],
     "menus": {
