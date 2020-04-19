@@ -318,7 +318,7 @@ export class RichCallsDirection {
 
     constructor(
         private _mem: vscode.Memento,
-        private _value: CallsDirection = CallsDirection.Incoming,
+        private _value: CallsDirection = CallsDirection.Outgoing,
     ) {
         const raw = _mem.get<number>(RichCallsDirection._key);
         if (typeof raw === 'number' && raw >= 0 && raw <= 1) {
