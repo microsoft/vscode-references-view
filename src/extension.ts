@@ -345,7 +345,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('references-view.find', () => findReferencesCommand(ItemSource.References)),
         vscode.commands.registerCommand('references-view.findImplementations', () => findReferencesCommand(ItemSource.Implementations)),
         vscode.commands.registerCommand('references-view.refindReference', findReferencesCommand),
-        vscode.commands.registerCommand('references-view.showCallHierarchy', updateCallHierachyModel),
+        vscode.commands.registerCommand('references-view.showCallHierarchy', () => updateCallHierachyModel()),
         vscode.commands.registerCommand('references-view.showOutgoingCalls', (arg) => setCallHierarchyDirectionCommand(CallsDirection.Outgoing, arg)),
         vscode.commands.registerCommand('references-view.showIncomingCalls', (arg) => setCallHierarchyDirectionCommand(CallsDirection.Incoming, arg)),
         vscode.commands.registerCommand('references-view.refind', refindCommand),
