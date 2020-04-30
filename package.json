@@ -134,6 +134,14 @@
         "title": "Show Incoming Calls",
         "category": "Calls",
         "icon": "$(call-incoming)"
+      },
+      {
+        "command": "references-view.next",
+        "title": "Go to Next Reference"
+      },
+      {
+        "command": "references-view.prev",
+        "title": "Go to Previous Reference"
       }
     ],
     "menus": {
@@ -278,6 +286,14 @@
         {
           "command": "references-view.pickFromHistory",
           "when": "reference-list.isActive"
+        },
+        {
+          "command": "references-view.next",
+          "when": "never"
+        },
+        {
+          "command": "references-view.prev",
+          "when": "never"
         }
       ]
     },
