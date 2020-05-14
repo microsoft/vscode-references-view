@@ -231,7 +231,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
 
         if (uri && pos) {
-            vscode.window.showTextDocument(uri, {
+            return vscode.commands.executeCommand('vscode.open', uri, {
                 selection: new vscode.Range(pos, pos),
                 preserveFocus
             });
