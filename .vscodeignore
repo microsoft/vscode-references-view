@@ -5,3 +5,6 @@ src/
 tsconfig.json
 webpack.config.json
 
+webpack.config.js
+*.d.ts
+media/demo.png
