@@ -39,7 +39,7 @@ export class ReferencesProvider implements vscode.TreeDataProvider<FileItem | Re
         } else {
             // references
             const { range } = element.location;
-            const doc = await element.parent.getDocument(true);
+            const doc = await element.getDocument(true);
             const { before, inside, after } = getPreviewChunks(doc, range);
 
             const label: vscode.TreeItemLabel = {

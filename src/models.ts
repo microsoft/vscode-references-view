@@ -56,35 +56,36 @@ export const enum ItemSource {
 
 export class FileItem {
 
-    private _document: Thenable<vscode.TextDocument> | undefined;
-
     constructor(
         readonly uri: vscode.Uri,
         readonly results: Array<ReferenceItem>,
         readonly parent: ReferencesModel
     ) { }
-
-    async getDocument(warmUpNext?: boolean) {
-        if (!this._document) {
-            this._document = vscode.workspace.openTextDocument(this.uri);
-        }
-        if (warmUpNext) {
-            // load next document once this document has been loaded
-            // and when next document has not yet been loaded
-            const item = await this.parent.move(this, true);
-            if (item && !item.parent._document) {
-                this._document.then(() => item.parent.getDocument(false));
-            }
-        }
-        return this._document;
-    }
 }
 
 export class ReferenceItem {
+
+    private _document: Thenable<vscode.TextDocument> | undefined;
+
     constructor(
         readonly location: vscode.Location,
         readonly parent: FileItem,
     ) { }
+
+    async getDocument(warmUpNext?: boolean) {
+        if (!this._document) {
+            this._document = vscode.workspace.openTextDocument(this.location.uri);
+        }
+        if (warmUpNext) {
+            // load next document once this document has been loaded
+            // and when next document has not yet been loaded
+            const item = await this.parent.parent.move(this, true);
+            if (item && !item._document) {
+                this._document.then(() => item.getDocument(false));
+            }
+        }
+        return this._document;
+    }
 }
 
 export class ReferencesModel {
@@ -113,7 +114,7 @@ export class ReferencesModel {
             locations.sort(ReferencesModel._compareLocations);
             for (const loc of locations) {
                 if (!last || ReferencesModel._compareUriIgnoreFragment(last.uri, loc.uri) !== 0) {
-                    last = new FileItem(loc.uri, [], this);
+                    last = new FileItem(loc.uri.with({ fragment: '' }), [], this);
                     items.push(last);
                 }
                 last.results.push(new ReferenceItem(loc, last));

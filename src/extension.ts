@@ -280,7 +280,7 @@ export function activate(context: vscode.ExtensionContext) {
                 stack.push(...(await item.items).slice(0, 99));
 
             } else if (item instanceof ReferenceItem) {
-                let doc = await item.parent.getDocument();
+                let doc = await item.getDocument();
                 let chunks = getPreviewChunks(doc, item.location.range, 21, false);
                 val += `  ${item.location.range.start.line + 1}, ${item.location.range.start.character + 1}: ${chunks.before + chunks.inside + chunks.after} \n`;
 
