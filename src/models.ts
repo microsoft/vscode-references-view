@@ -91,11 +91,7 @@ export class ReferencesModel {
 
     static create(uri: vscode.Uri, position: vscode.Position, source: ItemSource): ReferencesModel {
         const locations = Promise.resolve(vscode.commands.executeCommand<vscode.Location[]>(source, uri, position)).then(loc => {
-            if (!loc) {
-                return [];
-            } else {
-                return loc.sort(ReferencesModel._compareLocations);
-            }
+            return loc?.sort(ReferencesModel._compareLocations) ?? [];
         });
         return new ReferencesModel(source, uri, position, locations);
     }
@@ -116,7 +112,7 @@ export class ReferencesModel {
             let last: FileItem | undefined;
             locations.sort(ReferencesModel._compareLocations);
             for (const loc of locations) {
-                if (!last || last.uri.toString() !== loc.uri.toString()) {
+                if (!last || ReferencesModel._compareUriIgnoreFragment(last.uri, loc.uri) !== 0) {
                     last = new FileItem(loc.uri, [], this);
                     items.push(last);
                 }
@@ -267,12 +263,23 @@ export class ReferencesModel {
         }
     }
 
-    private static _compareLocations(a: vscode.Location, b: vscode.Location): number {
-        if (a.uri.toString() < b.uri.toString()) {
+    private static _compareUriIgnoreFragment(a: vscode.Uri, b: vscode.Uri): number {
+        let aStr = a.with({ fragment: '' }).toString();
+        let bStr = b.with({ fragment: '' }).toString();
+        if (aStr < bStr) {
             return -1;
-        } else if (a.uri.toString() > b.uri.toString()) {
+        } else if (aStr < bStr) {
             return 1;
-        } else if (a.range.start.isBefore(b.range.start)) {
+        }
+        return 0;
+    }
+
+    private static _compareLocations(a: vscode.Location, b: vscode.Location): number {
+        let ret = ReferencesModel._compareUriIgnoreFragment(a.uri, b.uri);
+        if (ret !== 0) {
+            return ret;
+        }
+        if (a.range.start.isBefore(b.range.start)) {
             return -1;
         } else if (a.range.start.isAfter(b.range.start)) {
             return 1;
