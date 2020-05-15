@@ -267,7 +267,7 @@ export class ReferencesModel {
         let bStr = b.with({ fragment: '' }).toString();
         if (aStr < bStr) {
             return -1;
-        } else if (aStr < bStr) {
+        } else if (aStr > bStr) {
             return 1;
         }
         return 0;
@@ -276,7 +276,7 @@ export class ReferencesModel {
     private static _compareLocations(a: vscode.Location, b: vscode.Location): number {
         if (a.uri.toString() < b.uri.toString()) {
             return -1;
-        } else if (a.uri.toString() < b.uri.toString()) {
+        } else if (a.uri.toString() > b.uri.toString()) {
             return 1;
         } else if (a.range.start.isBefore(b.range.start)) {
             return -1;
