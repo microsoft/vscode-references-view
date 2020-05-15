@@ -91,9 +91,7 @@ export class ReferenceItem {
 export class ReferencesModel {
 
     static create(uri: vscode.Uri, position: vscode.Position, source: ItemSource): ReferencesModel {
-        const locations = Promise.resolve(vscode.commands.executeCommand<vscode.Location[]>(source, uri, position)).then(loc => {
-            return loc?.sort(ReferencesModel._compareLocations) ?? [];
-        });
+        const locations = Promise.resolve(vscode.commands.executeCommand<vscode.Location[]>(source, uri, position)).then(loc => loc ?? []);
         return new ReferencesModel(source, uri, position, locations);
     }
 
@@ -276,11 +274,11 @@ export class ReferencesModel {
     }
 
     private static _compareLocations(a: vscode.Location, b: vscode.Location): number {
-        let ret = ReferencesModel._compareUriIgnoreFragment(a.uri, b.uri);
-        if (ret !== 0) {
-            return ret;
-        }
-        if (a.range.start.isBefore(b.range.start)) {
+        if (a.uri.toString() < b.uri.toString()) {
+            return -1;
+        } else if (a.uri.toString() < b.uri.toString()) {
+            return 1;
+        } else if (a.range.start.isBefore(b.range.start)) {
             return -1;
         } else if (a.range.start.isAfter(b.range.start)) {
             return 1;
