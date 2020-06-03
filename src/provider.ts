@@ -75,9 +75,18 @@ export class CallItemDataProvider implements vscode.TreeDataProvider<CallHierarc
     private readonly _emitter = new vscode.EventEmitter<CallHierarchyItem | undefined>();
     readonly onDidChangeTreeData = this._emitter.event;
 
+    private readonly _modelListener: vscode.Disposable;
+
     constructor(
         private _model: CallsModel
-    ) { }
+    ) { 
+        this._modelListener = _model.onDidChange(e => this._emitter.fire(e instanceof CallHierarchyItem ? e : undefined));
+    }
+
+    dispose(): void {
+        this._emitter.dispose();
+        this._modelListener.dispose();
+    }
 
     getTreeItem(element: CallHierarchyItem): vscode.TreeItem {
 
@@ -94,7 +103,12 @@ export class CallItemDataProvider implements vscode.TreeDataProvider<CallHierarc
         if (!element) {
             return this._model.roots;
         } else {
-            return this._model.resolveCalls(element);
+            return element.children
+                ? Promise.resolve(element.children)
+                : this._model.resolveCalls(element).then((value) => {
+                    element.children = value;
+                    return value;
+                });
         }
     }
 
