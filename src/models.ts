@@ -360,7 +360,7 @@ export class CallsModel {
 
     readonly roots: Promise<CallItem[]>;
 
-    private readonly _onDidChange = new vscode.EventEmitter<CallsModel | CallItem>();
+    private readonly _onDidChange = new vscode.EventEmitter<CallsModel>();
     readonly onDidChange = this._onDidChange.event;
 
     constructor(readonly uri: vscode.Uri, readonly position: vscode.Position, readonly direction: CallsDirection) {
