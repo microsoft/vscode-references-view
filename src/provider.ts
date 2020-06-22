@@ -50,7 +50,7 @@ export class ReferencesProvider implements vscode.TreeDataProvider<FileItem | Re
             const result = new vscode.TreeItem2(label);
             result.collapsibleState = vscode.TreeItemCollapsibleState.None;
             result.contextValue = 'reference-item';
-            result.command = { command: 'references-view.show', title: 'Open Reference', arguments: [element, true] };
+            result.command = { command: 'references-view.show', title: 'Open Reference', arguments: [element] };
             return result;
         }
     }
@@ -85,7 +85,7 @@ export class CallItemDataProvider implements vscode.TreeDataProvider<CallHierarc
         item.description = element.item.detail;
         item.contextValue = 'call-item';
         item.iconPath = CallItemDataProvider._getThemeIcon(element.item.kind);
-        item.command = { command: 'references-view.show', title: 'Open Call', arguments: [element, true] };
+        item.command = { command: 'references-view.show', title: 'Open Call', arguments: [element] };
         item.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
         return item;
     }
@@ -137,7 +137,7 @@ export class HistoryDataProvider implements vscode.TreeDataProvider<HistoryItem>
         const result = new vscode.TreeItem(element.label);
         // result.description = `${vscode.workspace.asRelativePath(element.uri)} • ${element.line} ${source && ` • ${source}`}`;
         result.description = element.description;
-        result.command = { command: 'references-view.show', arguments: [element, true], title: 'Show' };
+        result.command = { command: 'references-view.show', arguments: [element], title: 'Show' };
         result.collapsibleState = vscode.TreeItemCollapsibleState.None;
         result.contextValue = 'history-item';
         return result;
