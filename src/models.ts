@@ -104,13 +104,17 @@ export class ReferencesModel {
         readonly source: ItemSource,
         readonly uri: vscode.Uri,
         readonly position: vscode.Position,
-        locations: Promise<vscode.Location[]>
+        locations: Promise<vscode.Location[] | vscode.LocationLink[]>
     ) {
         this.items = locations.then(locations => {
             const items: FileItem[] = [];
             let last: FileItem | undefined;
             locations.sort(ReferencesModel._compareLocations);
-            for (const loc of locations) {
+            for (const item of locations) {
+                const loc = item instanceof vscode.Location
+                    ? item
+                    : new vscode.Location(item.targetUri, item.targetRange);
+
                 if (!last || ReferencesModel._compareUriIgnoreFragment(last.uri, loc.uri) !== 0) {
                     last = new FileItem(loc.uri.with({ fragment: '' }), [], this);
                     items.push(last);
@@ -273,14 +277,20 @@ export class ReferencesModel {
         return 0;
     }
 
-    private static _compareLocations(a: vscode.Location, b: vscode.Location): number {
-        if (a.uri.toString() < b.uri.toString()) {
+    private static _compareLocations(a: vscode.Location | vscode.LocationLink, b: vscode.Location | vscode.LocationLink): number {
+        let aUri = a instanceof vscode.Location ? a.uri : a.targetUri;
+        let bUri = b instanceof vscode.Location ? b.uri : b.targetUri;
+        if (aUri.toString() < bUri.toString()) {
             return -1;
-        } else if (a.uri.toString() > b.uri.toString()) {
+        } else if (aUri.toString() > bUri.toString()) {
             return 1;
-        } else if (a.range.start.isBefore(b.range.start)) {
+        }
+
+        let aRange = a instanceof vscode.Location ? a.range : a.targetRange;
+        let bRange = b instanceof vscode.Location ? b.range : b.targetRange;
+        if (aRange.start.isBefore(bRange.start)) {
             return -1;
-        } else if (a.range.start.isAfter(b.range.start)) {
+        } else if (aRange.start.isAfter(bRange.start)) {
             return 1;
         } else {
             return 0;
