@@ -26,6 +26,7 @@
     "onView:references-view.tree"
   ],
   "main": "./dist/extension",
+  "browser": "./dist/extension",  
   "contributes": {
     "configuration": {
       "properties": {
