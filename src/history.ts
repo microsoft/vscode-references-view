@@ -78,7 +78,7 @@ export class HistoryItem {
         for (const a of args) {
             str += JSON.stringify(a);
         }
-        return Buffer.from(str).toString('base64');
+        return str;
     }
 
     constructor(
