@@ -416,16 +416,11 @@ export class CallsModel {
     }
 
     async remove(item: CallItem): Promise<void> {
-        const roots = await this.roots;
-        if (-1 !== roots.indexOf(item)) {
-            del(roots, item);
-            this._onDidChange.fire(this);
+        const isInRoot = -1 != (await this.roots).indexOf (item)
+        const siblings = isInRoot ? await this.roots : item.parent?.children;
+        if (!siblings)
             return;
-        }
-
-        if (!item.parent?.children)
-            return;
-        del(item.parent.children, item);
+        del(siblings, item);
         this._onDidChange.fire(this);
     }
 
