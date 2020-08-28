@@ -79,7 +79,7 @@ export class CallItemDataProvider implements vscode.TreeDataProvider<CallHierarc
 
     constructor(
         private _model: CallsModel
-    ) { 
+    ) {
         this._modelListener = _model.onDidChange(e => this._emitter.fire(e instanceof CallHierarchyItem ? e : undefined));
     }
 
@@ -100,20 +100,9 @@ export class CallItemDataProvider implements vscode.TreeDataProvider<CallHierarc
     }
 
     getChildren(element?: CallHierarchyItem | undefined) {
-        if (!element) {
-            return this._model.roots;
-        } else {
-            return element.children
-                ? Promise.resolve(element.children)
-                : this._model.resolveCalls(element).then((value) => {
-                    element.children = value;
-                    return value;
-                });
-        }
-    }
-
-    getParent(element: CallHierarchyItem) {
-        return element.parent;
+        return element
+            ? this._model.getCallChildren(element)
+            : this._model.roots;
     }
 
     // vscode.SymbolKind.File === 0, Module === 1, etc...
