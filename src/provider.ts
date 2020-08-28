@@ -105,6 +105,10 @@ export class CallItemDataProvider implements vscode.TreeDataProvider<CallHierarc
             : this._model.roots;
     }
 
+    getParent(element: CallHierarchyItem) {
+        return element ? element.parent : undefined;
+    }
+
     // vscode.SymbolKind.File === 0, Module === 1, etc...
     private static _themeIconIds = [
         'symbol-file', 'symbol-module', 'symbol-namespace', 'symbol-package', 'symbol-class', 'symbol-method',
