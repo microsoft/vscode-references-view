@@ -345,8 +345,8 @@ export class RichCallsDirection {
 }
 
 export class CallItem {
-    children: CallItem[] | undefined = undefined
-    
+    children: CallItem[] | undefined;
+
     constructor(
         readonly item: vscode.CallHierarchyItem,
         readonly parent: CallItem | undefined,
@@ -379,6 +379,13 @@ export class CallsModel {
         }
     }
 
+    async getCallChildren(call: CallItem): Promise<CallItem[]> {
+        if (call.children)
+            return call.children;
+        call.children = await this.resolveCalls(call);
+        return call.children;
+    }
+
     changeDirection(): CallsModel {
         return new CallsModel(this.uri, this.position, this.direction === CallsDirection.Incoming ? CallsDirection.Outgoing : CallsDirection.Incoming);
     }
@@ -396,10 +403,10 @@ export class CallsModel {
         const roots = await this.roots;
         const array = -1 !== roots.indexOf(item) ? roots : item.parent?.children;
 
-        if(!array?.length)
+        if (!array?.length)
             return undefined;
 
-        const ix0 = array.indexOf(item)
+        const ix0 = array.indexOf(item);
         if (1 == array.length && 0 == ix0)
             return undefined; // No siblings to move to.
 
