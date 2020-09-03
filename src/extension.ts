@@ -227,7 +227,7 @@ export function activate(context: vscode.ExtensionContext) {
         } else if (arg instanceof HistoryItem) {
             uri = arg.uri;
             pos = arg.anchor.getPosition();
-            preserveFocus = false;
+            peserveFocus = false;
         }
 
         if (uri && pos) {
@@ -253,21 +253,22 @@ export function activate(context: vscode.ExtensionContext) {
             if (next) {
                 view.reveal(next, { select: true });
             }
-        }
-        else if (model instanceof CallsModel) {
+        } else if (model instanceof CallsModel) {
             const item = arg as CallItem;
             const next = await model.move(item, true);
             await model.remove(item);
 
-            if (await model.isEmpty())
+            if (await model.isEmpty()) {
                 return clearCommand();
+            }
 
             editorHighlights.refresh();
             showResultsMessage();
-            if (next)
+            if (next) {
                 view.reveal(next, { select: true });
-            else if (item.parent)
-                view.reveal(item.parent, {select: true});
+            } else if (item.parent) {
+                view.reveal(item.parent, { select: true });
+            }
         }
     };
 
