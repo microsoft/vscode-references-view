@@ -106,7 +106,7 @@ export class CallItemDataProvider implements vscode.TreeDataProvider<CallHierarc
     }
 
     getParent(element: CallHierarchyItem) {
-        return element ? element.parent : undefined;
+        return element.parent;
     }
 
     // vscode.SymbolKind.File === 0, Module === 1, etc...
