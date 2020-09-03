@@ -227,7 +227,7 @@ export function activate(context: vscode.ExtensionContext) {
         } else if (arg instanceof HistoryItem) {
             uri = arg.uri;
             pos = arg.anchor.getPosition();
-            peserveFocus = false;
+            preserveFocus = false;
         }
 
         if (uri && pos) {
