@@ -369,7 +369,7 @@ export class CallsModel {
         });
     }
 
-    async resolveCalls(call: CallItem): Promise<CallItem[]> {
+    private async _resolveCalls(call: CallItem): Promise<CallItem[]> {
         if (this.direction === CallsDirection.Incoming) {
             const calls = await vscode.commands.executeCommand<vscode.CallHierarchyIncomingCall[]>('vscode.provideIncomingCalls', call.item);
             return calls ? calls.map(item => new CallItem(item.from, call, item.fromRanges.map(range => new vscode.Location(item.from.uri, range)))) : [];
@@ -383,7 +383,7 @@ export class CallsModel {
         if (call.children) {
             return call.children;
         }
-        call.children = await this.resolveCalls(call);
+        call.children = await this._resolveCalls(call);
         return call.children;
     }
 
