@@ -380,8 +380,9 @@ export class CallsModel {
     }
 
     async getCallChildren(call: CallItem): Promise<CallItem[]> {
-        if (call.children)
+        if (call.children) {
             return call.children;
+        }
         call.children = await this.resolveCalls(call);
         return call.children;
     }
@@ -403,23 +404,21 @@ export class CallsModel {
         const roots = await this.roots;
         const array = -1 !== roots.indexOf(item) ? roots : item.parent?.children;
 
-        if (!array?.length)
+        if (!array?.length) {
             return undefined;
-
+        }
         const ix0 = array.indexOf(item);
-        if (1 == array.length && 0 == ix0)
+        if (1 == array.length && 0 == ix0) {
             return undefined; // No siblings to move to.
-
-        const delta = fwd ? +1 : -1;
-        const ix = (ix0 + delta + array.length) % array.length;
-        return array[ix];
+        }
     }
 
     async remove(item: CallItem): Promise<void> {
-        const isInRoot = -1 != (await this.roots).indexOf (item)
+        const isInRoot = -1 != (await this.roots).indexOf(item);
         const siblings = isInRoot ? await this.roots : item.parent?.children;
-        if (!siblings)
+        if (!siblings) {
             return;
+        }
         del(siblings, item);
         this._onDidChange.fire(this);
     }
