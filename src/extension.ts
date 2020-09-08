@@ -238,7 +238,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
-    const removeRefCommand = async (arg?: ReferenceItem | FileItem | any) => {
+    const removeRefCommand = async (arg?: ReferenceItem | FileItem | CallItem | any) => {
         if (model instanceof ReferencesModel) {
             let next: ReferenceItem | undefined;
             if (arg instanceof ReferenceItem) {
@@ -252,6 +252,22 @@ export function activate(context: vscode.ExtensionContext) {
             showResultsMessage();
             if (next) {
                 view.reveal(next, { select: true });
+            }
+        } else if (model instanceof CallsModel) {
+            const item = arg as CallItem;
+            const next = await model.move(item, true);
+            await model.remove(item);
+
+            if (await model.isEmpty()) {
+                return clearCommand();
+            }
+
+            editorHighlights.refresh();
+            showResultsMessage();
+            if (next) {
+                view.reveal(next, { select: true });
+            } else if (item.parent) {
+                view.reveal(item.parent, { select: true });
             }
         }
     };

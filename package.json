@@ -194,7 +194,7 @@
         {
           "command": "references-view.remove",
           "group": "inline",
-          "when": "view == references-view.tree && viewItem == file-item || view == references-view.tree && viewItem == reference-item"
+          "when": "view == references-view.tree && viewItem == file-item || view == references-view.tree && viewItem == reference-item || view == references-view.tree && viewItem == call-item"
         },
         {
           "command": "references-view.refind",
@@ -204,7 +204,7 @@
         {
           "command": "references-view.remove",
           "group": "1",
-          "when": "view == references-view.tree && viewItem == file-item || view == references-view.tree && viewItem == reference-item"
+          "when": "view == references-view.tree && viewItem == file-item || view == references-view.tree && viewItem == reference-item || view == references-view.tree && viewItem == call-item"
         },
         {
           "command": "references-view.refind",

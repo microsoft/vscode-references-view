@@ -6,6 +6,16 @@
 import * as vscode from 'vscode';
 import { HistoryItem, WordAnchor } from './history';
 
+function del<T>(array: T[], e: T): void {
+    const idx = array.indexOf(e);
+    if (idx >= 0) {
+        array.splice(idx, 1);
+    }
+}
+
+function tail<T>(array: T[]): T | undefined {
+    return array[array.length - 1];
+}
 
 export function getRequestRange(doc: vscode.TextDocument, pos: vscode.Position): vscode.Range | undefined {
     let range = doc.getWordRangeAtPosition(pos);
@@ -223,13 +233,13 @@ export class ReferencesModel {
     async remove(item: FileItem | ReferenceItem): Promise<void> {
 
         if (item instanceof FileItem) {
-            ReferencesModel._del(await this.items, item);
+            del(await this.items, item);
             this._onDidChange.fire(this);
 
         } else if (item instanceof ReferenceItem) {
-            ReferencesModel._del(item.parent.results, item);
+            del(item.parent.results, item);
             if (item.parent.results.length === 0) {
-                ReferencesModel._del(await this.items, item.parent);
+                del(await this.items, item.parent);
                 this._onDidChange.fire(this);
             } else {
                 this._onDidChange.fire(item.parent);
@@ -250,14 +260,14 @@ export class ReferencesModel {
             if (fwd) {
                 return _move(item).results[0];
             } else {
-                return ReferencesModel._tail(_move(item).results);
+                return tail(_move(item).results);
             }
         }
 
         if (item instanceof ReferenceItem) {
             const idx = item.parent.results.indexOf(item) + delta;
             if (idx < 0) {
-                return ReferencesModel._tail(_move(item.parent).results);
+                return tail(_move(item.parent).results);
             } else if (idx >= item.parent.results.length) {
                 return _move(item.parent).results[0];
             } else {
@@ -304,17 +314,6 @@ export class ReferencesModel {
         }
         return pos;
     }
-
-    private static _del<T>(array: T[], e: T): void {
-        const idx = array.indexOf(e);
-        if (idx >= 0) {
-            array.splice(idx, 1);
-        }
-    }
-
-    private static _tail<T>(array: T[]): T | undefined {
-        return array[array.length - 1];
-    }
 }
 
 
@@ -356,6 +355,8 @@ export class RichCallsDirection {
 }
 
 export class CallItem {
+    children: CallItem[] | undefined;
+
     constructor(
         readonly item: vscode.CallHierarchyItem,
         readonly parent: CallItem | undefined,
@@ -369,13 +370,16 @@ export class CallsModel {
 
     readonly roots: Promise<CallItem[]>;
 
+    private readonly _onDidChange = new vscode.EventEmitter<CallsModel>();
+    readonly onDidChange = this._onDidChange.event;
+
     constructor(readonly uri: vscode.Uri, readonly position: vscode.Position, readonly direction: CallsDirection) {
         this.roots = Promise.resolve(vscode.commands.executeCommand<vscode.CallHierarchyItem[]>('vscode.prepareCallHierarchy', uri, position)).then(items => {
             return items ? items.map(item => new CallItem(item, undefined, undefined)) : [];
         });
     }
 
-    async resolveCalls(call: CallItem): Promise<CallItem[]> {
+    private async _resolveCalls(call: CallItem): Promise<CallItem[]> {
         if (this.direction === CallsDirection.Incoming) {
             const calls = await vscode.commands.executeCommand<vscode.CallHierarchyIncomingCall[]>('vscode.provideIncomingCalls', call.item);
             return calls ? calls.map(item => new CallItem(item.from, call, item.fromRanges.map(range => new vscode.Location(item.from.uri, range)))) : [];
@@ -383,6 +387,14 @@ export class CallsModel {
             const calls = await vscode.commands.executeCommand<vscode.CallHierarchyOutgoingCall[]>('vscode.provideOutgoingCalls', call.item);
             return calls ? calls.map(item => new CallItem(item.to, call, item.fromRanges.map(range => new vscode.Location(call.item.uri, range)))) : [];
         }
+    }
+
+    async getCallChildren(call: CallItem): Promise<CallItem[]> {
+        if (call.children) {
+            return call.children;
+        }
+        call.children = await this._resolveCalls(call);
+        return call.children;
     }
 
     changeDirection(): CallsModel {
@@ -396,6 +408,29 @@ export class CallsModel {
     async first() {
         const [first] = await this.roots;
         return first;
+    }
+
+    async move(item: CallItem, fwd: boolean): Promise<CallItem | undefined> {
+        const roots = await this.roots;
+        const array = -1 !== roots.indexOf(item) ? roots : item.parent?.children;
+
+        if (!array?.length) {
+            return undefined;
+        }
+        const ix0 = array.indexOf(item);
+        if (1 == array.length && 0 == ix0) {
+            return undefined; // No siblings to move to.
+        }
+    }
+
+    async remove(item: CallItem): Promise<void> {
+        const isInRoot = -1 != (await this.roots).indexOf(item);
+        const siblings = isInRoot ? await this.roots : item.parent?.children;
+        if (!siblings) {
+            return;
+        }
+        del(siblings, item);
+        this._onDidChange.fire(this);
     }
 
     async asHistoryItem(args: any[]) {
