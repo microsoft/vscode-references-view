@@ -418,13 +418,13 @@ export class CallsModel {
             return undefined;
         }
         const ix0 = array.indexOf(item);
-        if (1 == array.length && 0 == ix0) {
+        if (1 === array.length && 0 === ix0) {
             return undefined; // No siblings to move to.
         }
     }
 
     async remove(item: CallItem): Promise<void> {
-        const isInRoot = -1 != (await this.roots).indexOf(item);
+        const isInRoot = -1 !== (await this.roots).indexOf(item);
         const siblings = isInRoot ? await this.roots : item.parent?.children;
         if (!siblings) {
             return;

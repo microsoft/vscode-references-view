@@ -323,10 +323,14 @@
   },
   "scripts": {
     "vscode:prepublish": "webpack --mode production",
+    "lint": "eslint src --ext ts",
     "compile": "webpack --mode none",
     "watch": "webpack --mode none --watch --info-verbosity verbose"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^3.8.0",
+    "@typescript-eslint/parser": "^3.8.0",
+    "eslint": "^7.6.0",
     "ts-loader": "~6.2.1",
     "typescript": "~3.7.2",
     "webpack": "~4.43.0",

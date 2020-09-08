@@ -97,7 +97,7 @@ export class History {
     private readonly _items = new Map<string, HistoryItem>();
 
     get isEmpty(): boolean {
-        return this._items.size == 0;
+        return this._items.size === 0;
     }
 
     *[Symbol.iterator]() {
