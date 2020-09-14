@@ -331,7 +331,7 @@ export function activate(context: vscode.ExtensionContext) {
         });
         const pick = await vscode.window.showQuickPick(picks, { placeHolder: 'Select previous reference search' });
         if (pick) {
-            await refindCommand(pick.item);
+            refindCommand(pick.item);
         }
     };
 
