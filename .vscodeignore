@@ -1,10 +1,13 @@
 .vscode
+.gitignore
+.eslintignore
+.vscode-test
+*.d.ts
+dist/test-integration*
+media/demo.png
 node_modules
 out/
 src/
+test-integration/
 tsconfig.json
-webpack.config.json
-
 webpack.config.js
-*.d.ts
-media/demo.png
