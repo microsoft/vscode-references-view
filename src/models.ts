@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import { HistoryItem, WordAnchor } from './history';
 
-function del<T>(array: T[], e: T): void {
+export function del<T>(array: T[], e: T): void {
     const idx = array.indexOf(e);
     if (idx >= 0) {
         array.splice(idx, 1);
