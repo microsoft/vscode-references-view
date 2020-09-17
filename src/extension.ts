@@ -327,7 +327,7 @@ export function activate(context: vscode.ExtensionContext) {
         }
     };
 
-    const showHistryPicks = async () => {
+    const showHistoryPicks = async () => {
         interface HistoryPick extends vscode.QuickPickItem {
             item: HistoryItem;
         }
@@ -382,7 +382,7 @@ export function activate(context: vscode.ExtensionContext) {
         vscode.commands.registerCommand('references-view.copy', copyCommand),
         vscode.commands.registerCommand('references-view.copyAll', () => copyCommand(model)),
         vscode.commands.registerCommand('references-view.copyPath', copyPathCommand),
-        vscode.commands.registerCommand('references-view.pickFromHistory', showHistryPicks),
+        vscode.commands.registerCommand('references-view.pickFromHistory', showHistoryPicks),
     );
 
 }
