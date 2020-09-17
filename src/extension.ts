@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import { EditorHighlights } from './editorHighlights';
 import { History, HistoryItem } from './history';
 import { CallItem, CallsDirection, CallsModel, Context, FileItem, getPreviewChunks, getRequestRange, ItemSource, ReferenceItem, ReferencesModel, RichCallsDirection } from './models';
-import { TreeDataProviderWrapper, TreeItem } from './provider';
+import { CallItemDataProvider, HistoryDataProvider, ReferencesProvider, TreeDataProviderWrapper, TreeItem } from './provider';
 
 export function activate(context: vscode.ExtensionContext) {
 
@@ -47,8 +47,15 @@ export function activate(context: vscode.ExtensionContext) {
         Context.HasResult.set(Boolean(model));
         Context.Source.set(model?.source);
 
+        let delegateProvider: Required<vscode.TreeDataProvider<any>> = new HistoryDataProvider(history);
+        if (model instanceof ReferencesModel) {
+            delegateProvider = new ReferencesProvider(model);
+        } else if (model instanceof CallsModel) {
+            delegateProvider = new CallItemDataProvider(model);
+        }
+
         revealView();
-        provider.update(newModel || history);
+        provider.update(delegateProvider);
 
         if (newModel) {
             await showResultsMessage();

@@ -162,46 +162,54 @@ export class HistoryDataProvider implements vscode.TreeDataProvider<HistoryItem>
 
 export type TreeItem = FileItem | ReferenceItem | HistoryItem | CallHierarchyItem;
 
+interface ActiveTreeDataProviderWrapper<T> {
+    provider: Required<vscode.TreeDataProvider<any>>;
+}
+
 export class TreeDataProviderWrapper<T> implements vscode.TreeDataProvider<T> {
 
-    private _provider?: Required<vscode.TreeDataProvider<any>>;
+    provider?: Required<vscode.TreeDataProvider<any>>;
+
     private _providerListener?: vscode.Disposable;
     private _onDidChange = new vscode.EventEmitter<any>();
 
     readonly onDidChangeTreeData = this._onDidChange.event;
 
-    update(model: ReferencesModel | CallsModel | History) {
-        if (this._providerListener) {
-            this._providerListener.dispose();
-            this._providerListener = undefined;
+    update(provider: Required<vscode.TreeDataProvider<any>>) {
+
+        this._providerListener?.dispose();
+        this._providerListener = undefined;
+
+        if (this.provider && typeof (<vscode.Disposable><any>this.provider).dispose === 'function') {
+            (<vscode.Disposable><any>this.provider).dispose();
+
         }
 
-        if (this._provider && typeof (<vscode.Disposable><any>this._provider).dispose === 'function') {
-            (<vscode.Disposable><any>this._provider).dispose();
-            this._provider = undefined;
+        this.provider = provider;
+        if (provider.onDidChangeTreeData) {
+            this._providerListener = provider.onDidChangeTreeData(this._onDidChange.fire, this._onDidChange);
         }
-
-        if (model instanceof ReferencesModel) {
-            this._provider = new ReferencesProvider(model);
-        } else if (model instanceof CallsModel) {
-            this._provider = new CallItemDataProvider(model);
-        } else {
-            this._provider = new HistoryDataProvider(model);
-        }
-
         this._onDidChange.fire();
-        this._providerListener = this._provider.onDidChangeTreeData(e => this._onDidChange.fire(e));
     }
 
     getTreeItem(element: T): vscode.TreeItem | Thenable<vscode.TreeItem> {
-        return this._provider!.getTreeItem(element);
+        this._assertProvider();
+        return this.provider.getTreeItem(element);
     }
 
-    getChildren(element?: T | undefined) {
-        return this._provider?.getChildren(element);
+    getChildren(parent?: T | undefined) {
+        this._assertProvider();
+        return this.provider.getChildren(parent);
     }
 
     getParent(element: T) {
-        return this._provider?.getParent(element);
+        this._assertProvider();
+        return this.provider.getParent(element);
+    }
+
+    private _assertProvider(): asserts this is ActiveTreeDataProviderWrapper<any> {
+        if (!this.provider) {
+            throw new Error('MISSING provider');
+        }
     }
 }
