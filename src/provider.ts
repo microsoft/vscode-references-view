@@ -159,14 +159,11 @@ export class HistoryDataProvider implements vscode.TreeDataProvider<HistoryItem>
     }
 }
 
-
-export type TreeItem = FileItem | ReferenceItem | HistoryItem | CallHierarchyItem;
-
-interface ActiveTreeDataProviderWrapper<T> {
+interface ActiveTreeDataProviderWrapper {
     provider: Required<vscode.TreeDataProvider<any>>;
 }
 
-export class TreeDataProviderWrapper<T> implements vscode.TreeDataProvider<T> {
+export class TreeDataProviderWrapper implements vscode.TreeDataProvider<undefined> {
 
     provider?: Required<vscode.TreeDataProvider<any>>;
 
@@ -192,22 +189,22 @@ export class TreeDataProviderWrapper<T> implements vscode.TreeDataProvider<T> {
         this._onDidChange.fire();
     }
 
-    getTreeItem(element: T): vscode.TreeItem | Thenable<vscode.TreeItem> {
+    getTreeItem(element: unknown): vscode.TreeItem | Thenable<vscode.TreeItem> {
         this._assertProvider();
         return this.provider.getTreeItem(element);
     }
 
-    getChildren(parent?: T | undefined) {
+    getChildren(parent?: unknown | undefined) {
         this._assertProvider();
         return this.provider.getChildren(parent);
     }
 
-    getParent(element: T) {
+    getParent(element: unknown) {
         this._assertProvider();
         return this.provider.getParent(element);
     }
 
-    private _assertProvider(): asserts this is ActiveTreeDataProviderWrapper<any> {
+    private _assertProvider(): asserts this is ActiveTreeDataProviderWrapper {
         if (!this.provider) {
             throw new Error('MISSING provider');
         }

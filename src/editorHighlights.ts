@@ -5,7 +5,6 @@
 
 import * as vscode from 'vscode';
 import { CallItem, CallsModel, FileItem, ReferencesModel } from './models';
-import { TreeItem } from './provider';
 
 export class EditorHighlights {
 
@@ -20,7 +19,7 @@ export class EditorHighlights {
     private _listener?: vscode.Disposable;
     private _ignore = new Set<FileItem | undefined>();
 
-    constructor(private readonly _view: vscode.TreeView<TreeItem>) { }
+    constructor(private readonly _view: vscode.TreeView<unknown>) { }
 
     setModel(model?: ReferencesModel | CallsModel): void {
         this._model = model;

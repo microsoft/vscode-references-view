@@ -7,13 +7,13 @@ import * as vscode from 'vscode';
 import { EditorHighlights } from './editorHighlights';
 import { History, HistoryItem } from './history';
 import { CallItem, CallsDirection, CallsModel, Context, FileItem, getPreviewChunks, getRequestRange, ItemSource, ReferenceItem, ReferencesModel, RichCallsDirection } from './models';
-import { CallItemDataProvider, HistoryDataProvider, ReferencesProvider, TreeDataProviderWrapper, TreeItem } from './provider';
+import { CallItemDataProvider, HistoryDataProvider, ReferencesProvider, TreeDataProviderWrapper } from './provider';
 
 export function activate(context: vscode.ExtensionContext) {
 
     const callsDirection = new RichCallsDirection(context.globalState);
     const history = new History();
-    const provider = new TreeDataProviderWrapper<TreeItem>();
+    const provider = new TreeDataProviderWrapper();
 
     const viewId = 'references-view.tree';
 
