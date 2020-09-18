@@ -13,8 +13,16 @@ export function del<T>(array: T[], e: T): void {
     }
 }
 
-function tail<T>(array: T[]): T | undefined {
+export function tail<T>(array: T[]): T | undefined {
     return array[array.length - 1];
+}
+
+export function prefixLen(a: string, b: string): number {
+    let pos = 0;
+    while (pos < a.length && pos < b.length && a.charCodeAt(pos) === b.charCodeAt(pos)) {
+        pos += 1;
+    }
+    return pos;
 }
 
 export function getRequestRange(doc: vscode.TextDocument, pos: vscode.Position): vscode.Range | undefined {
@@ -53,6 +61,20 @@ export class Context<V> {
         vscode.commands.executeCommand('setContext', this.name, value);
     }
 }
+
+export class ContextKey<V> {
+
+    constructor(readonly name: string) { }
+
+    async set(value: V) {
+        await vscode.commands.executeCommand('setContext', this.name, value);
+    }
+
+    async reset() {
+        await vscode.commands.executeCommand('setContext', this.name, undefined);
+    }
+}
+
 
 export const enum ItemSource {
     References = 'vscode.executeReferenceProvider',

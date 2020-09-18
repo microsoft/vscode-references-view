@@ -6,44 +6,50 @@
 import * as vscode from 'vscode';
 
 interface ActiveTreeDataProviderWrapper {
-	provider: Required<vscode.TreeDataProvider<any>>;
+	provider: Promise<Required<vscode.TreeDataProvider<any>>>;
 }
 
 class TreeDataProviderDelegate implements vscode.TreeDataProvider<undefined> {
 
-	provider?: Required<vscode.TreeDataProvider<any>>;
+	provider?: Promise<Required<vscode.TreeDataProvider<any>>>;
 
-	private _providerListener?: vscode.Disposable;
+	private _sessionDispoables?: vscode.Disposable;
 	private _onDidChange = new vscode.EventEmitter<any>();
 
 	readonly onDidChangeTreeData = this._onDidChange.event;
 
-	update(provider: Required<vscode.TreeDataProvider<any>>) {
+	update(provider: Promise<Required<vscode.TreeDataProvider<any>>>) {
 
-		this._providerListener?.dispose();
-		this._providerListener = undefined;
-
-		this.provider = provider;
-		this._providerListener = provider.onDidChangeTreeData
-			? provider.onDidChangeTreeData(this._onDidChange.fire, this._onDidChange)
-			: undefined;
+		this._sessionDispoables?.dispose();
+		this._sessionDispoables = undefined;
 
 		this._onDidChange.fire();
+
+		this.provider = provider;
+
+		provider.then(value => {
+			if (this.provider === provider) {
+				this._sessionDispoables = value.onDidChangeTreeData(this._onDidChange.fire, this._onDidChange);
+			}
+		}).catch(err => {
+			this.provider = undefined;
+			console.error(err);
+		});
 	}
 
-	getTreeItem(element: unknown): vscode.TreeItem | Thenable<vscode.TreeItem> {
+	async getTreeItem(element: unknown) {
 		this._assertProvider();
-		return this.provider.getTreeItem(element);
+		return (await this.provider).getTreeItem(element);
 	}
 
-	getChildren(parent?: unknown | undefined) {
+	async getChildren(parent?: unknown | undefined) {
 		this._assertProvider();
-		return this.provider.getChildren(parent);
+		return (await this.provider).getChildren(parent);
 	}
 
-	getParent(element: unknown) {
+	async getParent(element: unknown) {
 		this._assertProvider();
-		return this.provider.getParent(element);
+		return (await this.provider).getParent(element);
 	}
 
 	private _assertProvider(): asserts this is ActiveTreeDataProviderWrapper {
@@ -53,16 +59,28 @@ class TreeDataProviderDelegate implements vscode.TreeDataProvider<undefined> {
 	}
 }
 
-export interface SymbolTreeInput {
+export interface SymbolItemNavigation<T> {
+	nearest(uri: vscode.Uri, position: vscode.Position): T | undefined;
+	next(from: T): T;
+	previous(from: T): T;
+}
 
+export interface SymbolItemHighlights<T> {
+	getEditorHighlights(item: T, uri: vscode.Uri): vscode.Range[] | undefined;
+}
+
+export interface SymbolTreeModel {
+	message: string | undefined,
+	provider: Required<vscode.TreeDataProvider<unknown>>;
+	navigation?: SymbolItemNavigation<any>;
+	highlights?: SymbolItemHighlights<any>;
+}
+
+export interface SymbolTreeInput {
 	title: string;
 	uri: vscode.Uri;
 	position: vscode.Position;
-
-	resolve(): {
-		message: string | undefined,
-		provider: Required<vscode.TreeDataProvider<unknown>>;
-	};
+	resolve(): Promise<SymbolTreeModel>;
 }
 
 export class SymbolsTree {
@@ -72,6 +90,7 @@ export class SymbolsTree {
 	private readonly _tree: vscode.TreeView<unknown>;
 	private readonly _provider = new TreeDataProviderDelegate();
 
+	private _input?: SymbolTreeInput;
 	private _sessionDisposable?: vscode.Disposable;
 
 	constructor() {
@@ -82,23 +101,36 @@ export class SymbolsTree {
 	}
 
 	setInput(input: SymbolTreeInput) {
-
+		this._input = input;
 		this._sessionDisposable?.dispose();
-		const listener: vscode.Disposable[] = [];
 
 		this._tree.title = input.title;
-		const model = input.resolve();
-		this._provider.update(model.provider);
+		this._tree.message = undefined;
 
-		listener.push(model.provider.onDidChangeTreeData(() => {
+		const model = input.resolve();
+
+		this._provider.update(model.then(model => model.provider));
+
+		model.then(model => {
+
+			if (this._input !== input) {
+				return;
+			}
+
 			this._tree.title = input.title;
 			this._tree.message = model.message;
-		}));
 
-		if (typeof ((model.provider as unknown) as vscode.Disposable).dispose === 'function') {
-			listener.push((model.provider as unknown) as vscode.Disposable);
-		}
+			const listener: vscode.Disposable[] = [];
 
-		this._sessionDisposable = vscode.Disposable.from(...listener);
+			listener.push(model.provider.onDidChangeTreeData(() => {
+				this._tree.title = input.title;
+				this._tree.message = model.message;
+			}));
+
+			if (typeof ((model.provider as unknown) as vscode.Disposable).dispose === 'function') {
+				listener.push((model.provider as unknown) as vscode.Disposable);
+			}
+			this._sessionDisposable = vscode.Disposable.from(...listener);
+		});
 	}
 }

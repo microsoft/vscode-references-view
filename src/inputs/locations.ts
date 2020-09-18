@@ -4,8 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { del, getPreviewChunks } from '../models';
-import { SymbolTreeInput } from '../tree';
+import { del, getPreviewChunks, prefixLen, tail } from '../models';
+import { SymbolItemHighlights as SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput, SymbolTreeModel } from '../tree';
 
 export class LocationTreeInput implements SymbolTreeInput {
 
@@ -16,45 +16,40 @@ export class LocationTreeInput implements SymbolTreeInput {
 		private readonly _command: vscode.Command,
 	) { }
 
-	resolve() {
-		const result = Promise.resolve(vscode.commands.executeCommand<vscode.Location[] | vscode.LocationLink[]>(this._command.command, ...(this._command.arguments ?? [])));
-		const model = new LocationsModel(result);
+	async resolve() {
 
-		return {
-			provider: model,
-			get message() { return model.message; }
+		const result = Promise.resolve(vscode.commands.executeCommand<vscode.Location[] | vscode.LocationLink[]>(this._command.command, ...(this._command.arguments ?? [])));
+		const model = new LocationsModel(await result ?? []);
+
+		return <SymbolTreeModel>{
+			provider: new LocationsTreeDataProvider(model),
+			get message() { return model.message; },
+			navigation: model,
+			highlights: model
 		};
 	}
 }
 
-class LocationsModel implements Required<vscode.TreeDataProvider<FileItem | ReferenceItem>>{
+class LocationsModel implements SymbolItemNavigation<FileItem | ReferenceItem>, SymbolItemEditorHighlights<FileItem | ReferenceItem> {
 
 	private _onDidChange = new vscode.EventEmitter<FileItem | ReferenceItem | undefined>();
 	readonly onDidChangeTreeData = this._onDidChange.event;
 
-	_items?: FileItem[];
-	_ready: Promise<any>;
+	readonly items: FileItem[] = [];
 
-	constructor(locations: Promise<vscode.Location[] | vscode.LocationLink[] | undefined>) {
+	constructor(locations: vscode.Location[] | vscode.LocationLink[]) {
+		let last: FileItem | undefined;
+		for (const item of locations.sort(LocationsModel._compareLocations)) {
+			const loc = item instanceof vscode.Location
+				? item
+				: new vscode.Location(item.targetUri, item.targetRange);
 
-		this._ready = locations.then(locations => {
-			const items: FileItem[] = [];
-			if (locations) {
-				let last: FileItem | undefined;
-				for (const item of locations.sort(LocationsModel._compareLocations)) {
-					const loc = item instanceof vscode.Location
-						? item
-						: new vscode.Location(item.targetUri, item.targetRange);
-
-					if (!last || LocationsModel._compareUriIgnoreFragment(last.uri, loc.uri) !== 0) {
-						last = new FileItem(loc.uri.with({ fragment: '' }), [], this);
-						items.push(last);
-					}
-					last.references.push(new ReferenceItem(loc, last));
-				}
+			if (!last || LocationsModel._compareUriIgnoreFragment(last.uri, loc.uri) !== 0) {
+				last = new FileItem(loc.uri.with({ fragment: '' }), [], this);
+				this.items.push(last);
 			}
-			this._items = items;
-		});
+			last.references.push(new ReferenceItem(loc, last));
+		}
 	}
 
 	private static _compareUriIgnoreFragment(a: vscode.Uri, b: vscode.Uri): number {
@@ -88,20 +83,14 @@ class LocationsModel implements Required<vscode.TreeDataProvider<FileItem | Refe
 		}
 	}
 
-	private _assertResolved(): asserts this is Required<LocationsModel> {
-		if (!this._items) {
-			throw Error('items NOT resolved yet');
-		}
-	}
-
 	// --- adapter
 
 	get message() {
-		if (!this._items) {
+		if (!this.items) {
 			return undefined;
 		}
-		const total = this._items.reduce((prev, cur) => prev + cur.references.length, 0);
-		const files = this._items.length;
+		const total = this.items.reduce((prev, cur) => prev + cur.references.length, 0);
+		const files = this.items.length;
 		if (total === 1 && files === 1) {
 			return `${total} result in ${files} file`;
 		} else if (total === 1) {
@@ -113,29 +102,100 @@ class LocationsModel implements Required<vscode.TreeDataProvider<FileItem | Refe
 		}
 	}
 
-	next(item: FileItem): FileItem {
-		this._assertResolved();
-		const idx = this._items.indexOf(item);
-		const next = idx + 1 % this._items.length;
-		return this._items[next];
+	nearest(uri: vscode.Uri, position: vscode.Position): FileItem | ReferenceItem | undefined {
+
+		if (this.items.length === 0) {
+			return;
+		}
+		// NOTE: this.items is sorted by location (uri/range)
+		for (const item of this.items) {
+			if (item.uri.toString() === uri.toString()) {
+				// (1) pick the item at the request position
+				for (const ref of item.references) {
+					if (ref.location.range.contains(position)) {
+						return ref;
+					}
+				}
+				// (2) pick the first item after or last before the request position
+				let lastBefore: ReferenceItem | undefined;
+				for (const ref of item.references) {
+					if (ref.location.range.end.isAfter(position)) {
+						return ref;
+					}
+					lastBefore = ref;
+				}
+				if (lastBefore) {
+					return lastBefore;
+				}
+
+				break;
+			}
+		}
+
+		// (3) pick the file with the longest common prefix
+		let best = 0;
+		let bestValue = prefixLen(this.items[best].toString(), uri.toString());
+
+		for (let i = 1; i < this.items.length; i++) {
+			let value = prefixLen(this.items[i].uri.toString(), uri.toString());
+			if (value > bestValue) {
+				best = i;
+			}
+		}
+
+		return this.items[best].references[0];
 	}
 
-	previous(item: FileItem): FileItem {
-		this._assertResolved();
-		const idx = this._items.indexOf(item);
-		const prev = idx - 1 + this._items.length % this._items.length;
-		return this._items[prev];
+	next(item: FileItem | ReferenceItem): FileItem | ReferenceItem {
+		return this._move(item, true) ?? item;
+	}
+
+	previous(item: FileItem | ReferenceItem): FileItem | ReferenceItem {
+		return this._move(item, false) ?? item;
+	}
+
+	private _move(item: FileItem | ReferenceItem, fwd: boolean): ReferenceItem | undefined {
+
+		const delta = fwd ? +1 : -1;
+
+		const _move = (item: FileItem): FileItem => {
+			const idx = (this.items.indexOf(item) + delta + this.items.length) % this.items.length;
+			return this.items[idx];
+		};
+
+		if (item instanceof FileItem) {
+			if (fwd) {
+				return _move(item).references[0];
+			} else {
+				return tail(_move(item).references);
+			}
+		}
+
+		if (item instanceof ReferenceItem) {
+			const idx = item.file.references.indexOf(item) + delta;
+			if (idx < 0) {
+				return tail(_move(item.file).references);
+			} else if (idx >= item.file.references.length) {
+				return _move(item.file).references[0];
+			} else {
+				return item.file.references[idx];
+			}
+		}
+	}
+
+	getEditorHighlights(_item: FileItem | ReferenceItem, uri: vscode.Uri): vscode.Range[] | undefined {
+		const file = this.items.find(file => file.uri.toString() === uri.toString());
+		return file?.references.map(ref => ref.location.range);
 	}
 
 	remove(item: FileItem | ReferenceItem) {
-		this._assertResolved();
 		if (item instanceof FileItem) {
-			del(this._items, item);
+			del(this.items, item);
 			this._onDidChange.fire(undefined);
 		} else {
 			del(item.file.references, item);
 			if (item.file.references.length === 0) {
-				del(this._items, item.file);
+				del(this.items, item.file);
 				this._onDidChange.fire(undefined);
 			} else {
 				this._onDidChange.fire(item.file);
@@ -144,15 +204,30 @@ class LocationsModel implements Required<vscode.TreeDataProvider<FileItem | Refe
 	}
 
 	async asCopyText() {
-		this._assertResolved();
 		let result = '';
-		for (const item of this._items) {
+		for (const item of this.items) {
 			result += `${await item.asCopyText()}\n`;
 		}
 		return result;
 	}
 
-	// --- data provider mechanics
+}
+
+class LocationsTreeDataProvider implements Required<vscode.TreeDataProvider<FileItem | ReferenceItem>>{
+
+	private readonly _listener: vscode.Disposable;
+	private readonly _onDidChange = new vscode.EventEmitter<FileItem | ReferenceItem | undefined>();
+
+	readonly onDidChangeTreeData = this._onDidChange.event;
+
+	constructor(private readonly _model: LocationsModel) {
+		this._listener = _model.onDidChangeTreeData(e => this._onDidChange.fire());
+	}
+
+	dispose(): void {
+		this._onDidChange.dispose();
+		this._listener.dispose();
+	}
 
 	async getTreeItem(element: FileItem | ReferenceItem) {
 		if (element instanceof FileItem) {
@@ -184,11 +259,8 @@ class LocationsModel implements Required<vscode.TreeDataProvider<FileItem | Refe
 	}
 
 	async getChildren(element?: FileItem | ReferenceItem) {
-
-		await this._ready;
-
 		if (!element) {
-			return this._items;
+			return this._model.items;
 		}
 		if (element instanceof FileItem) {
 			return element.references;
@@ -239,7 +311,7 @@ class ReferenceItem {
 		}
 		if (warmUpNext) {
 			// load next document once this document has been loaded
-			const next = this.file.model.next(this.file);
+			const next = <FileItem>this.file.model.next(this.file);
 			if (next !== this.file) {
 				vscode.workspace.openTextDocument(next.uri);
 			}
