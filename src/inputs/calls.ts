@@ -24,7 +24,7 @@ export class LocationTreeInput implements SymbolTreeInput {
 
 		return <SymbolTreeModel>{
 			provider: new CallItemDataProvider(model),
-			get message() { return 'ddd'; },
+			get message() { return model.getMessage(); },
 			navigation: model,
 			highlights: model
 		};
@@ -148,6 +148,12 @@ class CallsModel implements SymbolItemNavigation<CallItem>, SymbolItemHighlights
 		return item.locations
 			?.filter(loc => loc.uri.toString() === uri.toString())
 			.map(loc => loc.range);
+	}
+
+	getMessage(): string {
+		return this.direction === CallsDirection.Incoming
+			? 'Callers Of'
+			: 'Calls From';
 	}
 }
 
