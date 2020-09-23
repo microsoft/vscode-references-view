@@ -138,11 +138,13 @@
       },
       {
         "command": "references-view.next",
-        "title": "Go to Next Reference"
+        "title": "Go to Next Reference",
+        "enablement": "references-view.canNavigate"
       },
       {
         "command": "references-view.prev",
-        "title": "Go to Previous Reference"
+        "title": "Go to Previous Reference",
+        "enablement": "references-view.canNavigate"
       }
     ],
     "menus": {

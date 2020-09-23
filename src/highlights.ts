@@ -24,7 +24,7 @@ export class EditorHighlights<T> {
 			vscode.window.onDidChangeActiveTextEditor(() => _view.visible && this._show()),
 			_view.onDidChangeVisibility(e => e.visible ? this._show() : this._hide())
 		);
-
+		this._show();
 	}
 
 	dispose() {

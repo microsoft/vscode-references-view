@@ -22,6 +22,7 @@ export interface SymbolTreeModel {
 	provider: Required<vscode.TreeDataProvider<unknown>>;
 	navigation?: SymbolItemNavigation<any>;
 	highlights?: SymbolItemEditorHighlights<any>;
+	dispose?(): void;
 }
 
 export interface SymbolTreeInput {

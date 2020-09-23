@@ -29,13 +29,17 @@ export class CallsTreeInput implements SymbolTreeInput {
 
 		const items = await Promise.resolve(vscode.commands.executeCommand<vscode.CallHierarchyItem[]>('vscode.prepareCallHierarchy', this.uri, this.position));
 		const model = new CallsModel(this.direction, items ?? []);
+		const provider = new CallItemDataProvider(model);
 
 		return <SymbolTreeModel>{
-			provider: new CallItemDataProvider(model),
+			provider,
 			message: undefined,
 			empty: model.roots.length === 0,
 			navigation: model,
-			highlights: model
+			highlights: model,
+			dispose() {
+				provider.dispose();
+			}
 		};
 	}
 

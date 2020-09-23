@@ -5,10 +5,12 @@
 
 import * as vscode from 'vscode';
 import { SymbolItemNavigation } from './api';
+import { ContextKey } from './models';
 
 export class Navigation {
 
 	private readonly _disposables: vscode.Disposable[] = [];
+	private readonly _ctxCanNavigate = new ContextKey<boolean>('references-view.canNavigate');
 
 	private _delegate?: SymbolItemNavigation<unknown>;
 
@@ -25,6 +27,7 @@ export class Navigation {
 
 	update(delegate: SymbolItemNavigation<unknown> | undefined) {
 		this._delegate = delegate;
+		this._ctxCanNavigate.set(Boolean(this._delegate));
 	}
 
 	private _anchor(): undefined | unknown {

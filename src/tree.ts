@@ -92,7 +92,6 @@ export class SymbolsTree {
 		let highlights: EditorHighlights<unknown> | undefined;
 		if (model.highlights) {
 			highlights = new EditorHighlights(this._tree, model.highlights);
-			highlights.update();
 			disposables.push(highlights);
 		}
 
@@ -102,9 +101,8 @@ export class SymbolsTree {
 			this._tree.message = model.message;
 			highlights?.update();
 		}));
-
-		if (typeof ((model.provider as unknown) as vscode.Disposable).dispose === 'function') {
-			disposables.push((model.provider as unknown) as vscode.Disposable);
+		if (typeof model.dispose === 'function') {
+			disposables.push(new vscode.Disposable(() => model.dispose!()));
 		}
 		this._sessionDisposable = vscode.Disposable.from(...disposables);
 	}

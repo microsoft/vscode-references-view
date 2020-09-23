@@ -26,13 +26,17 @@ export class LocationTreeInput implements SymbolTreeInput {
 
 		const result = Promise.resolve(vscode.commands.executeCommand<vscode.Location[] | vscode.LocationLink[]>(this._command, this.uri, this.position));
 		const model = new LocationsModel(await result ?? []);
+		const provider = new LocationsTreeDataProvider(model);
 
 		return <SymbolTreeModel>{
-			provider: new LocationsTreeDataProvider(model),
+			provider,
 			get message() { return model.message; },
 			empty: model.items.length === 0,
 			navigation: model,
-			highlights: model
+			highlights: model,
+			dispose(): void {
+				provider.dispose();
+			}
 		};
 	}
 
