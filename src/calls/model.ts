@@ -4,18 +4,23 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { ContextKey, del } from '../models';
+import { del } from '../models';
 import { SymbolItemHighlights, SymbolItemNavigation, SymbolTreeInput, SymbolTreeModel } from '../tree';
 
 
-export class LocationTreeInput implements SymbolTreeInput {
+export class CallsTreeInput implements SymbolTreeInput {
+
+	readonly title: string;
 
 	constructor(
-		readonly title: string,
 		readonly uri: vscode.Uri,
 		readonly position: vscode.Position,
 		readonly direction: CallsDirection,
-	) { }
+	) {
+		this.title = direction === CallsDirection.Incoming
+			? 'Callers Of'
+			: 'Calls From';
+	}
 
 	async resolve() {
 
@@ -24,10 +29,14 @@ export class LocationTreeInput implements SymbolTreeInput {
 
 		return <SymbolTreeModel>{
 			provider: new CallItemDataProvider(model),
-			get message() { return model.getMessage(); },
+			message: undefined,
 			navigation: model,
 			highlights: model
 		};
+	}
+
+	hash(): string {
+		return JSON.stringify([this.uri, this.position, this.direction]);
 	}
 }
 
@@ -38,36 +47,8 @@ export const enum CallsDirection {
 }
 
 
-export class RichCallsDirection {
 
-	private static _key = 'references-view.callHierarchyMode';
-
-	private _ctxMode = new ContextKey<'showIncoming' | 'showOutgoing'>('references-view.callHierarchyMode');
-
-	constructor(
-		private _mem: vscode.Memento,
-		private _value: CallsDirection = CallsDirection.Outgoing,
-	) {
-		const raw = _mem.get<number>(RichCallsDirection._key);
-		if (typeof raw === 'number' && raw >= 0 && raw <= 1) {
-			this.value = raw;
-		} else {
-			this.value = _value;
-		}
-	}
-
-	get value() {
-		return this._value;
-	}
-
-	set value(value: CallsDirection) {
-		this._value = value;
-		this._ctxMode.set(this._value === CallsDirection.Incoming ? 'showIncoming' : 'showOutgoing');
-		this._mem.update(RichCallsDirection._key, value);
-	}
-}
-
-class CallItem {
+export class CallItem {
 
 	children?: CallItem[];
 
@@ -149,12 +130,6 @@ class CallsModel implements SymbolItemNavigation<CallItem>, SymbolItemHighlights
 			?.filter(loc => loc.uri.toString() === uri.toString())
 			.map(loc => loc.range);
 	}
-
-	getMessage(): string {
-		return this.direction === CallsDirection.Incoming
-			? 'Callers Of'
-			: 'Calls From';
-	}
 }
 
 class CallItemDataProvider implements vscode.TreeDataProvider<CallItem> {
@@ -181,7 +156,7 @@ class CallItemDataProvider implements vscode.TreeDataProvider<CallItem> {
 		item.description = element.item.detail;
 		item.contextValue = 'call-item';
 		item.iconPath = CallItemDataProvider._getThemeIcon(element.item.kind);
-		item.command = { command: 'references-view.show', title: 'Open Call', arguments: [element] };
+		item.command = { command: 'references-view.showCallItem', title: 'Open Call', arguments: [element] };
 		item.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
 		return item;
 	}

@@ -1,4 +1,5 @@
 {
+    "editor.insertSpaces": false,
     "typescript.format.semicolons": "insert",
     "typescript.tsserver.experimental.enableProjectDiagnostics": true,
     "editor.codeActionsOnSave": {

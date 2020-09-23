@@ -13,12 +13,12 @@ export class LocationTreeInput implements SymbolTreeInput {
 		readonly title: string,
 		readonly uri: vscode.Uri,
 		readonly position: vscode.Position,
-		private readonly _command: vscode.Command,
+		private readonly _command: string,
 	) { }
 
 	async resolve() {
 
-		const result = Promise.resolve(vscode.commands.executeCommand<vscode.Location[] | vscode.LocationLink[]>(this._command.command, ...(this._command.arguments ?? [])));
+		const result = Promise.resolve(vscode.commands.executeCommand<vscode.Location[] | vscode.LocationLink[]>(this._command, this.uri, this.position));
 		const model = new LocationsModel(await result ?? []);
 
 		return <SymbolTreeModel>{
@@ -27,6 +27,10 @@ export class LocationTreeInput implements SymbolTreeInput {
 			navigation: model,
 			highlights: model
 		};
+	}
+
+	hash(): string {
+		return JSON.stringify([this.uri, this.position, this._command]);
 	}
 }
 
@@ -253,7 +257,7 @@ class LocationsTreeDataProvider implements Required<vscode.TreeDataProvider<File
 			const result = new vscode.TreeItem2(label);
 			result.collapsibleState = vscode.TreeItemCollapsibleState.None;
 			result.contextValue = 'reference-item';
-			result.command = { command: 'references-view.show', title: 'Open Reference', arguments: [element] };
+			result.command = { command: 'references-view.showReferenceItem', title: 'Open Reference', arguments: [element] };
 			return result;
 		}
 	}
@@ -296,7 +300,7 @@ class FileItem {
 	}
 }
 
-class ReferenceItem {
+export class ReferenceItem {
 
 	private _document: Thenable<vscode.TextDocument> | undefined;
 

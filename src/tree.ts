@@ -4,6 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import { WordAnchor } from './history';
+import { ContextKey } from './models';
 
 interface ActiveTreeDataProviderWrapper {
 	provider: Promise<Required<vscode.TreeDataProvider<any>>>;
@@ -81,14 +83,22 @@ export interface SymbolTreeInput {
 	uri: vscode.Uri;
 	position: vscode.Position;
 	resolve(): Promise<SymbolTreeModel>;
+	hash(): string;
 }
 
 export class SymbolsTree {
 
 	readonly viewId = 'references-view.tree';
 
-	private readonly _tree: vscode.TreeView<unknown>;
+	private readonly _onDidChangeInput = new vscode.EventEmitter<this>();
+	readonly onDidChangeInput = this._onDidChangeInput.event;
+
+	private readonly _ctxIsActive = new ContextKey<boolean>('reference-list.isActive');
+	private readonly _ctxHasResult = new ContextKey<boolean>('reference-list.hasResult');
+
+	private readonly _history = new TreeInputHistory(this);
 	private readonly _provider = new TreeDataProviderDelegate();
+	private readonly _tree: vscode.TreeView<unknown>;
 
 	private _input?: SymbolTreeInput;
 	private _sessionDisposable?: vscode.Disposable;
@@ -100,7 +110,22 @@ export class SymbolsTree {
 		});
 	}
 
+	dispose(): void {
+		this._tree.dispose();
+		this._onDidChangeInput.dispose();
+	}
+
+	getInput(): SymbolTreeInput | undefined {
+		return this._input;
+	}
+
 	setInput(input: SymbolTreeInput) {
+
+		this._history.add(input);
+		this._ctxIsActive.set(true);
+		this._ctxHasResult.set(true);
+		vscode.commands.executeCommand(`${this.viewId}.focus`);
+
 		this._input = input;
 		this._sessionDisposable?.dispose();
 
@@ -120,6 +145,12 @@ export class SymbolsTree {
 			this._tree.title = input.title;
 			this._tree.message = model.message;
 
+			// reveal & select
+			const selection = model.navigation?.nearest(input.uri, input.position);
+			if (selection && this._tree.visible) {
+				this._tree.reveal(selection, { select: true, focus: true, expand: true });
+			}
+
 			const listener: vscode.Disposable[] = [];
 
 			listener.push(model.provider.onDidChangeTreeData(() => {
@@ -132,5 +163,97 @@ export class SymbolsTree {
 			}
 			this._sessionDisposable = vscode.Disposable.from(...listener);
 		});
+	}
+
+	clearInput(): void {
+		this._input = undefined;
+		this._ctxHasResult.set(false);
+		this._tree.title = 'References';
+		this._tree.message = undefined;
+		this._provider.update(Promise.resolve(this._history));
+		if (this._history.size === 0) {
+			this._tree.message = 'Nothing to show';
+		}
+	}
+}
+
+// --- history
+
+class HistoryItem {
+	constructor(
+		readonly word: string,
+		readonly anchor: WordAnchor,
+		readonly input: SymbolTreeInput,
+	) { }
+}
+
+class TreeInputHistory implements vscode.TreeDataProvider<HistoryItem>{
+
+	private readonly _onDidChangeTreeData = new vscode.EventEmitter<HistoryItem | undefined>();
+	readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
+
+	private readonly _ctxHasHistory = new ContextKey<boolean>('reference-list.hasHistory');
+	private readonly _inputs = new Map<string, Thenable<HistoryItem>>();
+
+	constructor(tree: SymbolsTree) {
+
+		vscode.commands.registerCommand('references-view.clear', () => tree.clearInput());
+		vscode.commands.registerCommand('references-view.clearHistory', () => this.clear());
+		vscode.commands.registerCommand('references-view.refind', (item) => {
+			if (item instanceof HistoryItem) {
+				tree.setInput(item.input);
+			}
+		});
+		vscode.commands.registerCommand('_references-view.showHistoryItem', (item) => {
+			if (item instanceof HistoryItem) {
+				const position = item.anchor.getPosition() ?? item.input.position;
+				return vscode.commands.executeCommand('vscode.open', item.input.uri, { selection: new vscode.Range(position, position) });
+			}
+		});
+	}
+
+	add(input: SymbolTreeInput): void {
+
+		const p = vscode.workspace.openTextDocument(input.uri).then(doc => {
+			const anchor = new WordAnchor(doc, input.position);
+			const range = doc.getWordRangeAtPosition(input.position) ?? doc.getWordRangeAtPosition(input.position, /[^\s]+/);
+			const word = range ? doc.getText(range) : '???';
+			return new HistoryItem(word, anchor, input);
+		});
+
+		// use filo-ordering of native maps
+		const key = input.hash();
+		this._inputs.delete(key);
+		this._inputs.set(key, p);
+		this._ctxHasHistory.set(true);
+	}
+
+	clear(): void {
+		this._inputs.clear();
+		this._ctxHasHistory.set(false);
+		this._onDidChangeTreeData.fire(undefined);
+	}
+
+	get size() {
+		return this._inputs.size;
+	}
+
+	// --- tree data provider
+
+	getTreeItem(element: HistoryItem): vscode.TreeItem {
+		const result = new vscode.TreeItem(element.word);
+		result.description = `${vscode.workspace.asRelativePath(element.input.uri)} • ${element.input.title.toLocaleLowerCase()}`;
+		// result.command = { command: 'references-view.SHOW', arguments: [element], title: 'Rerun' };
+		result.collapsibleState = vscode.TreeItemCollapsibleState.None;
+		result.contextValue = 'history-item';
+		return result;
+	}
+
+	getChildren() {
+		return Promise.all([...this._inputs.values()].reverse());
+	}
+
+	getParent() {
+		return undefined;
 	}
 }
