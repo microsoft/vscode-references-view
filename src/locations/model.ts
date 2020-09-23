@@ -10,6 +10,7 @@ import { del, getPreviewChunks, prefixLen, tail } from '../models';
 export class LocationTreeInput implements SymbolTreeInput {
 
 	readonly contextValue: string;
+	readonly hash: string;
 
 	constructor(
 		readonly title: string,
@@ -18,6 +19,7 @@ export class LocationTreeInput implements SymbolTreeInput {
 		private readonly _command: string,
 	) {
 		this.contextValue = _command;
+		this.hash = JSON.stringify([this.uri, this.position, this._command]);
 	}
 
 	async resolve() {
@@ -34,8 +36,8 @@ export class LocationTreeInput implements SymbolTreeInput {
 		};
 	}
 
-	hash(): string {
-		return JSON.stringify([this.uri, this.position, this._command]);
+	with(position: vscode.Position): LocationTreeInput {
+		return new LocationTreeInput(this.title, this.uri, position, this._command);
 	}
 }
 

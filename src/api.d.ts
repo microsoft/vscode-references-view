@@ -24,10 +24,12 @@ export interface SymbolTreeModel {
 }
 
 export interface SymbolTreeInput {
-	contextValue: string;
-	title: string;
-	uri: vscode.Uri;
-	position: vscode.Position;
+	readonly contextValue: string;
+	readonly title: string;
+	readonly uri: vscode.Uri;
+	readonly position: vscode.Position;
+	readonly hash: string;
+
 	resolve(): Promise<SymbolTreeModel>;
-	hash(): string;
+	with(position: vscode.Position): SymbolTreeInput;
 }

@@ -48,11 +48,12 @@ export class SymbolsTree {
 		this._ctxHasResult.set(true);
 		vscode.commands.executeCommand(`${this.viewId}.focus`);
 
+		const newInputKind = !this._input || Object.getPrototypeOf(this._input) !== Object.getPrototypeOf(input);
 		this._input = input;
 		this._sessionDisposable?.dispose();
 
 		this._tree.title = input.title;
-		this._tree.message = undefined;
+		this._tree.message = newInputKind ? undefined : this._tree.message;
 
 		const modelPromise = input.resolve();
 
@@ -191,17 +192,24 @@ class TreeInputHistory implements vscode.TreeDataProvider<HistoryItem>{
 	private readonly _ctxHasHistory = new ContextKey<boolean>('reference-list.hasHistory');
 	private readonly _inputs = new Map<string, Thenable<HistoryItem>>();
 
-	constructor(tree: SymbolsTree) {
+	constructor(private readonly _tree: SymbolsTree) {
 
 		this._disposables.push(
-			vscode.commands.registerCommand('references-view.clear', () => tree.clearInput()),
+			vscode.commands.registerCommand('references-view.clear', () => _tree.clearInput()),
 			vscode.commands.registerCommand('references-view.clearHistory', () => {
 				this.clear();
-				tree.clearInput();
+				_tree.clearInput();
 			}),
 			vscode.commands.registerCommand('references-view.refind', (item) => {
 				if (item instanceof HistoryItem) {
-					tree.setInput(item.input);
+					this._reRunHistoryItem(item);
+				}
+			}),
+			vscode.commands.registerCommand('references-view.refresh', async () => {
+				const input = this._tree.getInput();
+				const item = this._inputs.get(input?.hash ?? '');
+				if (item) {
+					this._reRunHistoryItem(await item);
 				}
 			}),
 			vscode.commands.registerCommand('_references-view.showHistoryItem', (item) => {
@@ -218,6 +226,12 @@ class TreeInputHistory implements vscode.TreeDataProvider<HistoryItem>{
 		this._onDidChangeTreeData.dispose();
 	}
 
+	private _reRunHistoryItem(item: HistoryItem): void {
+		this._inputs.delete(item.input.hash);
+		const newInput = item.input.with(item.anchor.getPosition() ?? item.input.position);
+		this._tree.setInput(newInput);
+	}
+
 	add(input: SymbolTreeInput): void {
 
 		const p = vscode.workspace.openTextDocument(input.uri).then(doc => {
@@ -228,7 +242,7 @@ class TreeInputHistory implements vscode.TreeDataProvider<HistoryItem>{
 		});
 
 		// use filo-ordering of native maps
-		const key = input.hash();
+		const key = input.hash;
 		this._inputs.delete(key);
 		this._inputs.set(key, p);
 		this._ctxHasHistory.set(true);
