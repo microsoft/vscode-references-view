@@ -4,13 +4,14 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import { SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput, SymbolTreeModel } from '../api';
 import { del } from '../models';
-import { SymbolItemHighlights, SymbolItemNavigation, SymbolTreeInput, SymbolTreeModel } from '../tree';
 
 
 export class CallsTreeInput implements SymbolTreeInput {
 
 	readonly title: string;
+	readonly contextValue: string = 'callHierarchy';
 
 	constructor(
 		readonly uri: vscode.Uri,
@@ -30,6 +31,7 @@ export class CallsTreeInput implements SymbolTreeInput {
 		return <SymbolTreeModel>{
 			provider: new CallItemDataProvider(model),
 			message: undefined,
+			empty: model.roots.length === 0,
 			navigation: model,
 			highlights: model
 		};
@@ -59,7 +61,7 @@ export class CallItem {
 	) { }
 }
 
-class CallsModel implements SymbolItemNavigation<CallItem>, SymbolItemHighlights<CallItem> {
+class CallsModel implements SymbolItemNavigation<CallItem>, SymbolItemEditorHighlights<CallItem> {
 
 	readonly source = 'callHierarchy';
 

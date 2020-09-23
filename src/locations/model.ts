@@ -4,17 +4,21 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import { SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput, SymbolTreeModel } from '../api';
 import { del, getPreviewChunks, prefixLen, tail } from '../models';
-import { SymbolItemHighlights as SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput, SymbolTreeModel } from '../tree';
 
 export class LocationTreeInput implements SymbolTreeInput {
+
+	readonly contextValue: string;
 
 	constructor(
 		readonly title: string,
 		readonly uri: vscode.Uri,
 		readonly position: vscode.Position,
 		private readonly _command: string,
-	) { }
+	) {
+		this.contextValue = _command;
+	}
 
 	async resolve() {
 
@@ -24,6 +28,7 @@ export class LocationTreeInput implements SymbolTreeInput {
 		return <SymbolTreeModel>{
 			provider: new LocationsTreeDataProvider(model),
 			get message() { return model.message; },
+			empty: model.items.length === 0,
 			navigation: model,
 			highlights: model
 		};
@@ -90,8 +95,8 @@ class LocationsModel implements SymbolItemNavigation<FileItem | ReferenceItem>, 
 	// --- adapter
 
 	get message() {
-		if (!this.items) {
-			return undefined;
+		if (this.items.length === 0) {
+			return 'No results.';
 		}
 		const total = this.items.reduce((prev, cur) => prev + cur.references.length, 0);
 		const files = this.items.length;

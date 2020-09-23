@@ -4,8 +4,111 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
+import { SymbolTreeInput } from './api';
 import { WordAnchor } from './history';
 import { ContextKey } from './models';
+
+export class SymbolsTree {
+
+	readonly viewId = 'references-view.tree';
+
+	private readonly _ctxIsActive = new ContextKey<boolean>('reference-list.isActive');
+	private readonly _ctxHasResult = new ContextKey<boolean>('reference-list.hasResult');
+	private readonly _ctxInputSource = new ContextKey<string>('reference-list.source');
+
+	private readonly _history = new TreeInputHistory(this);
+	private readonly _provider = new TreeDataProviderDelegate();
+	private readonly _tree: vscode.TreeView<unknown>;
+
+	private _input?: SymbolTreeInput;
+	private _sessionDisposable?: vscode.Disposable;
+
+	constructor() {
+		this._tree = vscode.window.createTreeView<unknown>(this.viewId, {
+			treeDataProvider: this._provider,
+			showCollapseAll: true
+		});
+	}
+
+
+	dispose(): void {
+		this._history.dispose();
+		this._tree.dispose();
+	}
+
+	getInput(): SymbolTreeInput | undefined {
+		return this._input;
+	}
+
+	async setInput(input: SymbolTreeInput) {
+
+		this._ctxInputSource.set(input.contextValue);
+		this._ctxIsActive.set(true);
+		this._ctxHasResult.set(true);
+		vscode.commands.executeCommand(`${this.viewId}.focus`);
+
+		this._input = input;
+		this._sessionDisposable?.dispose();
+
+		this._tree.title = input.title;
+		this._tree.message = undefined;
+
+		const modelPromise = input.resolve();
+
+		// set promise to tree data provider to trigger tree loading UI
+		this._provider.update(modelPromise.then(model => model.provider));
+
+		const model = await modelPromise;
+		if (this._input !== input) {
+			return;
+		}
+
+		if (model.empty) {
+			this.clearInput();
+			this._tree.message = this._history.size === 0 ? 'No results.' : 'No results. Try running a previous search again:';
+			return;
+		}
+
+		this._history.add(input);
+		this._tree.message = model.message;
+
+		// reveal & select
+		const selection = model.navigation?.nearest(input.uri, input.position);
+		if (selection && this._tree.visible) {
+			this._tree.reveal(selection, { select: true, focus: true, expand: true });
+		}
+
+		// editor highlights
+
+
+		// listener
+		const listener: vscode.Disposable[] = [];
+		listener.push(model.provider.onDidChangeTreeData(() => {
+			this._tree.title = input.title;
+			this._tree.message = model.message;
+		}));
+
+		if (typeof ((model.provider as unknown) as vscode.Disposable).dispose === 'function') {
+			listener.push((model.provider as unknown) as vscode.Disposable);
+		}
+		this._sessionDisposable = vscode.Disposable.from(...listener);
+
+	}
+
+	clearInput(): void {
+		this._input = undefined;
+		this._ctxHasResult.set(false);
+		this._ctxInputSource.reset();
+		this._tree.title = 'References';
+		this._tree.message = undefined;
+		this._provider.update(Promise.resolve(this._history));
+		if (this._history.size === 0) {
+			this._tree.message = 'Nothing to show';
+		}
+	}
+}
+
+// --- tree data
 
 interface ActiveTreeDataProviderWrapper {
 	provider: Promise<Required<vscode.TreeDataProvider<any>>>;
@@ -61,122 +164,6 @@ class TreeDataProviderDelegate implements vscode.TreeDataProvider<undefined> {
 	}
 }
 
-export interface SymbolItemNavigation<T> {
-	nearest(uri: vscode.Uri, position: vscode.Position): T | undefined;
-	next(from: T): T;
-	previous(from: T): T;
-}
-
-export interface SymbolItemHighlights<T> {
-	getEditorHighlights(item: T, uri: vscode.Uri): vscode.Range[] | undefined;
-}
-
-export interface SymbolTreeModel {
-	message: string | undefined,
-	provider: Required<vscode.TreeDataProvider<unknown>>;
-	navigation?: SymbolItemNavigation<any>;
-	highlights?: SymbolItemHighlights<any>;
-}
-
-export interface SymbolTreeInput {
-	title: string;
-	uri: vscode.Uri;
-	position: vscode.Position;
-	resolve(): Promise<SymbolTreeModel>;
-	hash(): string;
-}
-
-export class SymbolsTree {
-
-	readonly viewId = 'references-view.tree';
-
-	private readonly _onDidChangeInput = new vscode.EventEmitter<this>();
-	readonly onDidChangeInput = this._onDidChangeInput.event;
-
-	private readonly _ctxIsActive = new ContextKey<boolean>('reference-list.isActive');
-	private readonly _ctxHasResult = new ContextKey<boolean>('reference-list.hasResult');
-
-	private readonly _history = new TreeInputHistory(this);
-	private readonly _provider = new TreeDataProviderDelegate();
-	private readonly _tree: vscode.TreeView<unknown>;
-
-	private _input?: SymbolTreeInput;
-	private _sessionDisposable?: vscode.Disposable;
-
-	constructor() {
-		this._tree = vscode.window.createTreeView<unknown>(this.viewId, {
-			treeDataProvider: this._provider,
-			showCollapseAll: true
-		});
-	}
-
-	dispose(): void {
-		this._tree.dispose();
-		this._onDidChangeInput.dispose();
-	}
-
-	getInput(): SymbolTreeInput | undefined {
-		return this._input;
-	}
-
-	setInput(input: SymbolTreeInput) {
-
-		this._history.add(input);
-		this._ctxIsActive.set(true);
-		this._ctxHasResult.set(true);
-		vscode.commands.executeCommand(`${this.viewId}.focus`);
-
-		this._input = input;
-		this._sessionDisposable?.dispose();
-
-		this._tree.title = input.title;
-		this._tree.message = undefined;
-
-		const model = input.resolve();
-
-		this._provider.update(model.then(model => model.provider));
-
-		model.then(model => {
-
-			if (this._input !== input) {
-				return;
-			}
-
-			this._tree.title = input.title;
-			this._tree.message = model.message;
-
-			// reveal & select
-			const selection = model.navigation?.nearest(input.uri, input.position);
-			if (selection && this._tree.visible) {
-				this._tree.reveal(selection, { select: true, focus: true, expand: true });
-			}
-
-			const listener: vscode.Disposable[] = [];
-
-			listener.push(model.provider.onDidChangeTreeData(() => {
-				this._tree.title = input.title;
-				this._tree.message = model.message;
-			}));
-
-			if (typeof ((model.provider as unknown) as vscode.Disposable).dispose === 'function') {
-				listener.push((model.provider as unknown) as vscode.Disposable);
-			}
-			this._sessionDisposable = vscode.Disposable.from(...listener);
-		});
-	}
-
-	clearInput(): void {
-		this._input = undefined;
-		this._ctxHasResult.set(false);
-		this._tree.title = 'References';
-		this._tree.message = undefined;
-		this._provider.update(Promise.resolve(this._history));
-		if (this._history.size === 0) {
-			this._tree.message = 'Nothing to show';
-		}
-	}
-}
-
 // --- history
 
 class HistoryItem {
@@ -192,24 +179,32 @@ class TreeInputHistory implements vscode.TreeDataProvider<HistoryItem>{
 	private readonly _onDidChangeTreeData = new vscode.EventEmitter<HistoryItem | undefined>();
 	readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
+	private readonly _disposables: vscode.Disposable[] = [];
 	private readonly _ctxHasHistory = new ContextKey<boolean>('reference-list.hasHistory');
 	private readonly _inputs = new Map<string, Thenable<HistoryItem>>();
 
 	constructor(tree: SymbolsTree) {
 
-		vscode.commands.registerCommand('references-view.clear', () => tree.clearInput());
-		vscode.commands.registerCommand('references-view.clearHistory', () => this.clear());
-		vscode.commands.registerCommand('references-view.refind', (item) => {
-			if (item instanceof HistoryItem) {
-				tree.setInput(item.input);
-			}
-		});
-		vscode.commands.registerCommand('_references-view.showHistoryItem', (item) => {
-			if (item instanceof HistoryItem) {
-				const position = item.anchor.getPosition() ?? item.input.position;
-				return vscode.commands.executeCommand('vscode.open', item.input.uri, { selection: new vscode.Range(position, position) });
-			}
-		});
+		this._disposables.push(
+			vscode.commands.registerCommand('references-view.clear', () => tree.clearInput()),
+			vscode.commands.registerCommand('references-view.clearHistory', () => this.clear()),
+			vscode.commands.registerCommand('references-view.refind', (item) => {
+				if (item instanceof HistoryItem) {
+					tree.setInput(item.input);
+				}
+			}),
+			vscode.commands.registerCommand('_references-view.showHistoryItem', (item) => {
+				if (item instanceof HistoryItem) {
+					const position = item.anchor.getPosition() ?? item.input.position;
+					return vscode.commands.executeCommand('vscode.open', item.input.uri, { selection: new vscode.Range(position, position) });
+				}
+			})
+		);
+	}
+
+	dispose(): void {
+		vscode.Disposable.from(...this._disposables).dispose();
+		this._onDidChangeTreeData.dispose();
 	}
 
 	add(input: SymbolTreeInput): void {
