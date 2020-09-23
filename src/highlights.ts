@@ -42,7 +42,11 @@ export class EditorHighlights<T> {
 		if (this._ignore.has(editor.document.uri.toString())) {
 			return;
 		}
-		const ranges = this._delegate.getEditorHighlights(this._view.selection[0], editor.document.uri);
+		const [anchor] = this._view.selection;
+		if (!anchor) {
+			return;
+		}
+		const ranges = this._delegate.getEditorHighlights(anchor, editor.document.uri);
 		if (ranges) {
 			editor.setDecorations(this._decorationType, ranges);
 		}

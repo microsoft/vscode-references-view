@@ -8,6 +8,7 @@ import { SymbolTreeInput } from './api';
 import { EditorHighlights } from './highlights';
 import { WordAnchor } from './history';
 import { ContextKey } from './models';
+import { Navigation } from './navigation';
 
 export class SymbolsTree {
 
@@ -20,6 +21,7 @@ export class SymbolsTree {
 	private readonly _history = new TreeInputHistory(this);
 	private readonly _provider = new TreeDataProviderDelegate();
 	private readonly _tree: vscode.TreeView<unknown>;
+	private readonly _navigation: Navigation;
 
 	private _input?: SymbolTreeInput;
 	private _sessionDisposable?: vscode.Disposable;
@@ -29,6 +31,7 @@ export class SymbolsTree {
 			treeDataProvider: this._provider,
 			showCollapseAll: true
 		});
+		this._navigation = new Navigation(this._tree);
 	}
 
 	dispose(): void {
@@ -73,6 +76,9 @@ export class SymbolsTree {
 
 		this._history.add(input);
 		this._tree.message = model.message;
+
+		// navigation
+		this._navigation.update(model.navigation);
 
 		// reveal & select
 		const selection = model.navigation?.nearest(input.uri, input.position);

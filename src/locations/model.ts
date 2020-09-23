@@ -113,6 +113,10 @@ class LocationsModel implements SymbolItemNavigation<FileItem | ReferenceItem>, 
 		}
 	}
 
+	location(item: FileItem | ReferenceItem) {
+		return item instanceof ReferenceItem ? item.location : undefined;
+	}
+
 	nearest(uri: vscode.Uri, position: vscode.Position): FileItem | ReferenceItem | undefined {
 
 		if (this.items.length === 0) {

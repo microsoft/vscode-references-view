@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput, SymbolTreeModel } from '../api';
-import { del } from '../models';
+import { del, tail } from '../models';
 
 
 export class CallsTreeInput implements SymbolTreeInput {
@@ -93,6 +93,10 @@ class CallsModel implements SymbolItemNavigation<CallItem>, SymbolItemEditorHigh
 		return call.children;
 	}
 
+	location(item: CallItem) {
+		return new vscode.Location(item.item.uri, item.item.range);
+	}
+
 	nearest(uri: vscode.Uri, _position: vscode.Position): CallItem | undefined {
 		return this.roots.find(item => item.item.uri.toString() === uri.toString()) ?? this.roots[0];
 	}
@@ -106,17 +110,14 @@ class CallsModel implements SymbolItemNavigation<CallItem>, SymbolItemEditorHigh
 	}
 
 	private _move(item: CallItem, fwd: boolean) {
-		const roots = this.roots;
-		const array = roots.indexOf(item) ? roots : item.parent?.children;
-
-		if (!array?.length) {
-			return undefined;
+		if (item.children?.length) {
+			return fwd ? item.children[0] : tail(item.children);
 		}
-		const idx = array.indexOf(item);
-		if (fwd) {
-			return array[idx + 1 % array.length];
-		} else {
-			return array[idx + -1 + array.length % array.length];
+		const array = this.roots.includes(item) ? this.roots : item.parent?.children;
+		if (array?.length) {
+			const idx = array.indexOf(item);
+			const delta = fwd ? 1 : -1;
+			return array[idx + delta + array.length % array.length];
 		}
 	}
 

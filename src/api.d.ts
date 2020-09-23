@@ -9,6 +9,7 @@ export interface SymbolItemNavigation<T> {
 	nearest(uri: vscode.Uri, position: vscode.Position): T | undefined;
 	next(from: T): T;
 	previous(from: T): T;
+	location(item: T): vscode.Location | undefined;
 }
 
 export interface SymbolItemEditorHighlights<T> {
