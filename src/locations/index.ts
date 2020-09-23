@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { SymbolsTree } from '../tree';
-import { LocationTreeInput, ReferenceItem } from './model';
+import { FileItem, LocationsModel, LocationTreeInput, ReferenceItem } from './model';
 
 export function register(tree: SymbolsTree, context: vscode.ExtensionContext): void {
 
@@ -28,6 +28,41 @@ export function register(tree: SymbolsTree, context: vscode.ExtensionContext): v
 					preserveFocus
 				});
 			}
-		})
+		}),
+		vscode.commands.registerCommand('references-view.copy', copyCommand),
+		vscode.commands.registerCommand('references-view.copyAll', copyAllCommand),
+		vscode.commands.registerCommand('references-view.copyPath', copyPathCommand),
 	);
 }
+
+const copyAllCommand = async (item: ReferenceItem | FileItem | unknown) => {
+	if (item instanceof ReferenceItem) {
+		copyCommand(item.file.model);
+	} else if (item instanceof FileItem) {
+		copyCommand(item.model);
+	}
+};
+
+const copyCommand = async (item: LocationsModel | ReferenceItem | FileItem | unknown) => {
+	let val: string | undefined;
+	if (item instanceof LocationsModel) {
+		val = await item.asCopyText();
+	} else if (item instanceof ReferenceItem) {
+		val = await item.asCopyText();
+	} else if (item instanceof FileItem) {
+		val = await item.asCopyText();
+	}
+	if (val) {
+		await vscode.env.clipboard.writeText(val);
+	}
+};
+
+const copyPathCommand = (item: FileItem | unknown) => {
+	if (item instanceof FileItem) {
+		if (item.uri.scheme === 'file') {
+			vscode.env.clipboard.writeText(item.uri.fsPath);
+		} else {
+			vscode.env.clipboard.writeText(item.uri.toString(true));
+		}
+	}
+};

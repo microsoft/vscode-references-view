@@ -45,7 +45,7 @@ export class LocationTreeInput implements SymbolTreeInput {
 	}
 }
 
-class LocationsModel implements SymbolItemNavigation<FileItem | ReferenceItem>, SymbolItemEditorHighlights<FileItem | ReferenceItem> {
+export class LocationsModel implements SymbolItemNavigation<FileItem | ReferenceItem>, SymbolItemEditorHighlights<FileItem | ReferenceItem> {
 
 	private _onDidChange = new vscode.EventEmitter<FileItem | ReferenceItem | undefined>();
 	readonly onDidChangeTreeData = this._onDidChange.event;
@@ -292,7 +292,7 @@ class LocationsTreeDataProvider implements Required<vscode.TreeDataProvider<File
 	}
 }
 
-class FileItem {
+export class FileItem {
 
 	constructor(
 		readonly uri: vscode.Uri,

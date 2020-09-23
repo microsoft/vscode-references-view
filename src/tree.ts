@@ -180,11 +180,16 @@ class TreeDataProviderDelegate implements vscode.TreeDataProvider<undefined> {
 // --- history
 
 class HistoryItem {
+
+	readonly description: string;
+
 	constructor(
 		readonly word: string,
 		readonly anchor: WordAnchor,
 		readonly input: SymbolTreeInput,
-	) { }
+	) {
+		this.description = `${vscode.workspace.asRelativePath(input.uri)} • ${input.title.toLocaleLowerCase()}`;
+	}
 }
 
 class TreeInputHistory implements vscode.TreeDataProvider<HistoryItem>{
@@ -221,7 +226,22 @@ class TreeInputHistory implements vscode.TreeDataProvider<HistoryItem>{
 					const position = item.anchor.getPosition() ?? item.input.position;
 					return vscode.commands.executeCommand('vscode.open', item.input.uri, { selection: new vscode.Range(position, position) });
 				}
-			})
+			}),
+			vscode.commands.registerCommand('references-view.pickFromHistory', async () => {
+				interface HistoryPick extends vscode.QuickPickItem {
+					item: HistoryItem;
+				}
+				const entries = await this.getChildren();
+				const picks = entries.map(item => <HistoryPick>{
+					label: item.word,
+					description: item.description,
+					item
+				});
+				const pick = await vscode.window.showQuickPick(picks, { placeHolder: 'Select previous reference search' });
+				if (pick) {
+					this._reRunHistoryItem(pick.item);
+				}
+			}),
 		);
 	}
 
@@ -264,10 +284,10 @@ class TreeInputHistory implements vscode.TreeDataProvider<HistoryItem>{
 
 	// --- tree data provider
 
-	getTreeItem(element: HistoryItem): vscode.TreeItem {
-		const result = new vscode.TreeItem(element.word);
-		result.description = `${vscode.workspace.asRelativePath(element.input.uri)} • ${element.input.title.toLocaleLowerCase()}`;
-		// result.command = { command: 'references-view.SHOW', arguments: [element], title: 'Rerun' };
+	getTreeItem(item: HistoryItem): vscode.TreeItem {
+		const result = new vscode.TreeItem(item.word);
+		result.description = item.description;
+		result.command = { command: '_references-view.showHistoryItem', arguments: [item], title: 'Rerun' };
 		result.collapsibleState = vscode.TreeItemCollapsibleState.None;
 		result.contextValue = 'history-item';
 		return result;
