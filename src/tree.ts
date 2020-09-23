@@ -5,6 +5,7 @@
 
 import * as vscode from 'vscode';
 import { SymbolTreeInput } from './api';
+import { EditorHighlights } from './highlights';
 import { WordAnchor } from './history';
 import { ContextKey } from './models';
 
@@ -30,10 +31,10 @@ export class SymbolsTree {
 		});
 	}
 
-
 	dispose(): void {
 		this._history.dispose();
 		this._tree.dispose();
+		this._sessionDisposable?.dispose();
 	}
 
 	getInput(): SymbolTreeInput | undefined {
@@ -78,24 +79,31 @@ export class SymbolsTree {
 			this._tree.reveal(selection, { select: true, focus: true, expand: true });
 		}
 
-		// editor highlights
+		const disposables: vscode.Disposable[] = [];
 
+		// editor highlights
+		let highlights: EditorHighlights<unknown> | undefined;
+		if (model.highlights) {
+			highlights = new EditorHighlights(this._tree, model.highlights);
+			highlights.update();
+			disposables.push(highlights);
+		}
 
 		// listener
-		const listener: vscode.Disposable[] = [];
-		listener.push(model.provider.onDidChangeTreeData(() => {
+		disposables.push(model.provider.onDidChangeTreeData(() => {
 			this._tree.title = input.title;
 			this._tree.message = model.message;
+			highlights?.update();
 		}));
 
 		if (typeof ((model.provider as unknown) as vscode.Disposable).dispose === 'function') {
-			listener.push((model.provider as unknown) as vscode.Disposable);
+			disposables.push((model.provider as unknown) as vscode.Disposable);
 		}
-		this._sessionDisposable = vscode.Disposable.from(...listener);
-
+		this._sessionDisposable = vscode.Disposable.from(...disposables);
 	}
 
 	clearInput(): void {
+		this._sessionDisposable?.dispose();
 		this._input = undefined;
 		this._ctxHasResult.set(false);
 		this._ctxInputSource.reset();
@@ -103,7 +111,7 @@ export class SymbolsTree {
 		this._tree.message = undefined;
 		this._provider.update(Promise.resolve(this._history));
 		if (this._history.size === 0) {
-			this._tree.message = 'Nothing to show';
+			this._tree.message = 'No results.';
 		}
 	}
 }
@@ -187,7 +195,10 @@ class TreeInputHistory implements vscode.TreeDataProvider<HistoryItem>{
 
 		this._disposables.push(
 			vscode.commands.registerCommand('references-view.clear', () => tree.clearInput()),
-			vscode.commands.registerCommand('references-view.clearHistory', () => this.clear()),
+			vscode.commands.registerCommand('references-view.clearHistory', () => {
+				this.clear();
+				tree.clearInput();
+			}),
 			vscode.commands.registerCommand('references-view.refind', (item) => {
 				if (item instanceof HistoryItem) {
 					tree.setInput(item.input);
