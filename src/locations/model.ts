@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput, SymbolTreeModel } from '../api';
-import { del, getPreviewChunks, prefixLen, tail } from '../utils';
+import { del, getPreviewChunks, tail } from '../utils';
 
 export class LocationTreeInput implements SymbolTreeInput {
 
@@ -151,16 +151,24 @@ export class LocationsModel implements SymbolItemNavigation<FileItem | Reference
 
 		// (3) pick the file with the longest common prefix
 		let best = 0;
-		let bestValue = prefixLen(this.items[best].toString(), uri.toString());
+		let bestValue = LocationsModel._prefixLen(this.items[best].toString(), uri.toString());
 
 		for (let i = 1; i < this.items.length; i++) {
-			let value = prefixLen(this.items[i].uri.toString(), uri.toString());
+			let value = LocationsModel._prefixLen(this.items[i].uri.toString(), uri.toString());
 			if (value > bestValue) {
 				best = i;
 			}
 		}
 
 		return this.items[best].references[0];
+	}
+
+	private static _prefixLen(a: string, b: string): number {
+		let pos = 0;
+		while (pos < a.length && pos < b.length && a.charCodeAt(pos) === b.charCodeAt(pos)) {
+			pos += 1;
+		}
+		return pos;
 	}
 
 	next(item: FileItem | ReferenceItem): FileItem | ReferenceItem {

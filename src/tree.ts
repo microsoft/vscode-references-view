@@ -6,9 +6,8 @@
 import * as vscode from 'vscode';
 import { SymbolTreeInput } from './api';
 import { EditorHighlights } from './highlights';
-import { WordAnchor } from './history';
 import { Navigation } from './navigation';
-import { ContextKey, isValidRequestPosition } from './utils';
+import { ContextKey, isValidRequestPosition, WordAnchor } from './utils';
 
 export class SymbolsTree {
 
