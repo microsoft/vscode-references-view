@@ -46,7 +46,7 @@ export class SymbolsTree {
 	async setInput(input: SymbolTreeInput) {
 
 		if (!await isValidRequestPosition(input.uri, input.position)) {
-			this._resetInput();
+			this.clearInput();
 			return;
 		}
 
@@ -73,7 +73,7 @@ export class SymbolsTree {
 		}
 
 		if (model.empty) {
-			this._resetInput();
+			this.clearInput();
 			return;
 		}
 
@@ -116,16 +116,8 @@ export class SymbolsTree {
 		this._ctxHasResult.set(false);
 		this._ctxInputSource.reset();
 		this._tree.title = 'References';
-		this._tree.message = undefined;
-		this._provider.update(Promise.resolve(this._history));
-		if (this._history.size === 0) {
-			this._tree.message = 'No results.';
-		}
-	}
-
-	private _resetInput() {
-		this.clearInput();
 		this._tree.message = this._history.size === 0 ? 'No results.' : 'No results. Try running a previous search again:';
+		this._provider.update(Promise.resolve(this._history));
 	}
 }
 
