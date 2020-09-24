@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { Context } from './models';
+import { Context } from './utils';
 
 export class WordAnchor {
 

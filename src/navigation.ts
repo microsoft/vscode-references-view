@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { SymbolItemNavigation } from './api';
-import { ContextKey } from './models';
+import { ContextKey } from './utils';
 
 export class Navigation {
 

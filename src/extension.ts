@@ -9,9 +9,9 @@ import * as calls from './calls';
 import { EditorHighlights } from './editorHighlights';
 import { History, HistoryItem } from './history';
 import * as locations from './locations';
-import { CallItem, CallsDirection, CallsModel, Context, FileItem, getPreviewChunks, getRequestRange, ItemSource, ReferenceItem, ReferencesModel, RichCallsDirection } from './models';
 import { CallItemDataProvider, HistoryDataProvider, ReferencesProvider, TreeDataProviderWrapper } from './provider';
 import { SymbolsTree } from './tree';
+import { CallItem, CallsDirection, CallsModel, Context, FileItem, getPreviewChunks, getRequestRange, ItemSource, ReferenceItem, ReferencesModel, RichCallsDirection } from './utils';
 
 export function activate(context: vscode.ExtensionContext) {
 

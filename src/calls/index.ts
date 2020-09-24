@@ -4,8 +4,8 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { ContextKey } from '../models';
 import { SymbolsTree } from '../tree';
+import { ContextKey } from '../utils';
 import { CallItem, CallsDirection, CallsTreeInput } from './model';
 
 export function register(tree: SymbolsTree, context: vscode.ExtensionContext): void {

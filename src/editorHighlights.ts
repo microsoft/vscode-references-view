@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { CallItem, CallsModel, FileItem, ReferencesModel } from './models';
+import { CallItem, CallsModel, FileItem, ReferencesModel } from './utils';
 
 export class EditorHighlights {
 

@@ -25,6 +25,15 @@ export function prefixLen(a: string, b: string): number {
     return pos;
 }
 
+export async function isValidRequestPosition(uri: vscode.Uri, position: vscode.Position) {
+    const doc = await vscode.workspace.openTextDocument(uri);
+    let range = doc.getWordRangeAtPosition(position);
+    if (!range) {
+        range = doc.getWordRangeAtPosition(position, /[^\s]+/);
+    }
+    return Boolean(range);
+}
+
 export function getRequestRange(doc: vscode.TextDocument, pos: vscode.Position): vscode.Range | undefined {
     let range = doc.getWordRangeAtPosition(pos);
     if (!range) {

@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput, SymbolTreeModel } from '../api';
-import { del, getPreviewChunks, prefixLen, tail } from '../models';
+import { del, getPreviewChunks, prefixLen, tail } from '../utils';
 
 export class LocationTreeInput implements SymbolTreeInput {
 

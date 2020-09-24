@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { History, HistoryItem } from './history';
-import { CallItem as CallHierarchyItem, CallsModel, FileItem, getPreviewChunks, ReferenceItem, ReferencesModel } from './models';
+import { CallItem as CallHierarchyItem, CallsModel, FileItem, getPreviewChunks, ReferenceItem, ReferencesModel } from './utils';
 
 export class ReferencesProvider implements vscode.TreeDataProvider<FileItem | ReferenceItem> {
 

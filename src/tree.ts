@@ -7,8 +7,8 @@ import * as vscode from 'vscode';
 import { SymbolTreeInput } from './api';
 import { EditorHighlights } from './highlights';
 import { WordAnchor } from './history';
-import { ContextKey } from './models';
 import { Navigation } from './navigation';
+import { ContextKey, isValidRequestPosition } from './utils';
 
 export class SymbolsTree {
 
@@ -46,6 +46,11 @@ export class SymbolsTree {
 
 	async setInput(input: SymbolTreeInput) {
 
+		if (!await isValidRequestPosition(input.uri, input.position)) {
+			this._resetInput();
+			return;
+		}
+
 		this._ctxInputSource.set(input.contextValue);
 		this._ctxIsActive.set(true);
 		this._ctxHasResult.set(true);
@@ -69,8 +74,7 @@ export class SymbolsTree {
 		}
 
 		if (model.empty) {
-			this.clearInput();
-			this._tree.message = this._history.size === 0 ? 'No results.' : 'No results. Try running a previous search again:';
+			this._resetInput();
 			return;
 		}
 
@@ -118,6 +122,11 @@ export class SymbolsTree {
 		if (this._history.size === 0) {
 			this._tree.message = 'No results.';
 		}
+	}
+
+	private _resetInput() {
+		this.clearInput();
+		this._tree.message = this._history.size === 0 ? 'No results.' : 'No results. Try running a previous search again:';
 	}
 }
 
