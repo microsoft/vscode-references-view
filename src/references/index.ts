@@ -5,13 +5,13 @@
 
 import * as vscode from 'vscode';
 import { SymbolsTree } from '../tree';
-import { FileItem, LocationsModel, LocationTreeInput, ReferenceItem } from './model';
+import { FileItem, ReferenceItem, ReferencesModel, ReferencesTreeInput } from './model';
 
 export function register(tree: SymbolsTree, context: vscode.ExtensionContext): void {
 
 	function findLocations(title: string, command: string) {
 		if (vscode.window.activeTextEditor) {
-			const input = new LocationTreeInput(title, vscode.window.activeTextEditor.document.uri, vscode.window.activeTextEditor.selection.active, command);
+			const input = new ReferencesTreeInput(title, vscode.window.activeTextEditor.document.uri, vscode.window.activeTextEditor.selection.active, command);
 			tree.setInput(input);
 		}
 	}
@@ -54,9 +54,9 @@ function removeReferenceItem(item: FileItem | ReferenceItem | unknown) {
 }
 
 
-async function copyCommand(item: LocationsModel | ReferenceItem | FileItem | unknown) {
+async function copyCommand(item: ReferencesModel | ReferenceItem | FileItem | unknown) {
 	let val: string | undefined;
-	if (item instanceof LocationsModel) {
+	if (item instanceof ReferencesModel) {
 		val = await item.asCopyText();
 	} else if (item instanceof ReferenceItem) {
 		val = await item.asCopyText();

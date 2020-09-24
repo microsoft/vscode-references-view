@@ -7,7 +7,7 @@ import * as vscode from 'vscode';
 import { SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput, SymbolTreeModel } from '../api';
 import { del, getPreviewChunks, tail } from '../utils';
 
-export class LocationTreeInput implements SymbolTreeInput {
+export class ReferencesTreeInput implements SymbolTreeInput {
 
 	readonly contextValue: string;
 
@@ -23,8 +23,8 @@ export class LocationTreeInput implements SymbolTreeInput {
 	async resolve() {
 
 		const result = Promise.resolve(vscode.commands.executeCommand<vscode.Location[] | vscode.LocationLink[]>(this._command, this.uri, this.position));
-		const model = new LocationsModel(await result ?? []);
-		const provider = new LocationsTreeDataProvider(model);
+		const model = new ReferencesModel(await result ?? []);
+		const provider = new ReferencesTreeDataProvider(model);
 
 		return <SymbolTreeModel>{
 			provider,
@@ -38,12 +38,12 @@ export class LocationTreeInput implements SymbolTreeInput {
 		};
 	}
 
-	with(position: vscode.Position): LocationTreeInput {
-		return new LocationTreeInput(this.title, this.uri, position, this._command);
+	with(position: vscode.Position): ReferencesTreeInput {
+		return new ReferencesTreeInput(this.title, this.uri, position, this._command);
 	}
 }
 
-export class LocationsModel implements SymbolItemNavigation<FileItem | ReferenceItem>, SymbolItemEditorHighlights<FileItem | ReferenceItem> {
+export class ReferencesModel implements SymbolItemNavigation<FileItem | ReferenceItem>, SymbolItemEditorHighlights<FileItem | ReferenceItem> {
 
 	private _onDidChange = new vscode.EventEmitter<FileItem | ReferenceItem | undefined>();
 	readonly onDidChangeTreeData = this._onDidChange.event;
@@ -52,12 +52,12 @@ export class LocationsModel implements SymbolItemNavigation<FileItem | Reference
 
 	constructor(locations: vscode.Location[] | vscode.LocationLink[]) {
 		let last: FileItem | undefined;
-		for (const item of locations.sort(LocationsModel._compareLocations)) {
+		for (const item of locations.sort(ReferencesModel._compareLocations)) {
 			const loc = item instanceof vscode.Location
 				? item
 				: new vscode.Location(item.targetUri, item.targetRange);
 
-			if (!last || LocationsModel._compareUriIgnoreFragment(last.uri, loc.uri) !== 0) {
+			if (!last || ReferencesModel._compareUriIgnoreFragment(last.uri, loc.uri) !== 0) {
 				last = new FileItem(loc.uri.with({ fragment: '' }), [], this);
 				this.items.push(last);
 			}
@@ -151,10 +151,10 @@ export class LocationsModel implements SymbolItemNavigation<FileItem | Reference
 
 		// (3) pick the file with the longest common prefix
 		let best = 0;
-		let bestValue = LocationsModel._prefixLen(this.items[best].toString(), uri.toString());
+		let bestValue = ReferencesModel._prefixLen(this.items[best].toString(), uri.toString());
 
 		for (let i = 1; i < this.items.length; i++) {
-			let value = LocationsModel._prefixLen(this.items[i].uri.toString(), uri.toString());
+			let value = ReferencesModel._prefixLen(this.items[i].uri.toString(), uri.toString());
 			if (value > bestValue) {
 				best = i;
 			}
@@ -238,14 +238,14 @@ export class LocationsModel implements SymbolItemNavigation<FileItem | Reference
 
 }
 
-class LocationsTreeDataProvider implements Required<vscode.TreeDataProvider<FileItem | ReferenceItem>>{
+class ReferencesTreeDataProvider implements Required<vscode.TreeDataProvider<FileItem | ReferenceItem>>{
 
 	private readonly _listener: vscode.Disposable;
 	private readonly _onDidChange = new vscode.EventEmitter<FileItem | ReferenceItem | undefined>();
 
 	readonly onDidChangeTreeData = this._onDidChange.event;
 
-	constructor(private readonly _model: LocationsModel) {
+	constructor(private readonly _model: ReferencesModel) {
 		this._listener = _model.onDidChangeTreeData(e => this._onDidChange.fire());
 	}
 
@@ -303,7 +303,7 @@ export class FileItem {
 	constructor(
 		readonly uri: vscode.Uri,
 		readonly references: Array<ReferenceItem>,
-		readonly model: LocationsModel
+		readonly model: ReferencesModel
 	) { }
 
 	// --- adapter

@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import { SymbolTreeInput } from './api';
 import * as calls from './calls';
-import * as locations from './locations';
+import * as references from './references';
 import { SymbolsTree } from './tree';
 
 export function activate(context: vscode.ExtensionContext) {
@@ -17,7 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
 		tree.setInput(input);
 	}
 
-	locations.register(tree, context);
+	references.register(tree, context);
 	calls.register(tree, context);
 
 	return { setInput };
