@@ -10,7 +10,6 @@ import { del, getPreviewChunks, prefixLen, tail } from '../utils';
 export class LocationTreeInput implements SymbolTreeInput {
 
 	readonly contextValue: string;
-	readonly hash: string;
 
 	constructor(
 		readonly title: string,
@@ -19,7 +18,6 @@ export class LocationTreeInput implements SymbolTreeInput {
 		private readonly _command: string,
 	) {
 		this.contextValue = _command;
-		this.hash = JSON.stringify([this.uri, this.position, this._command]);
 	}
 
 	async resolve() {

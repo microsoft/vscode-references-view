@@ -193,6 +193,7 @@ class HistoryItem {
 	readonly description: string;
 
 	constructor(
+		readonly key: string,
 		readonly word: string,
 		readonly anchor: WordAnchor,
 		readonly input: SymbolTreeInput,
@@ -208,7 +209,7 @@ class TreeInputHistory implements vscode.TreeDataProvider<HistoryItem>{
 
 	private readonly _disposables: vscode.Disposable[] = [];
 	private readonly _ctxHasHistory = new ContextKey<boolean>('reference-list.hasHistory');
-	private readonly _inputs = new Map<string, Thenable<HistoryItem>>();
+	private readonly _inputs = new Map<string, HistoryItem>();
 
 	constructor(private readonly _tree: SymbolsTree) {
 
@@ -223,16 +224,15 @@ class TreeInputHistory implements vscode.TreeDataProvider<HistoryItem>{
 					this._reRunHistoryItem(item);
 				}
 			}),
-			vscode.commands.registerCommand('references-view.refresh', async () => {
-				const input = this._tree.getInput();
-				const item = this._inputs.get(input?.hash ?? '');
+			vscode.commands.registerCommand('references-view.refresh', () => {
+				const [item] = this._inputs.values();
 				if (item) {
-					this._reRunHistoryItem(await item);
+					this._reRunHistoryItem(item);
 				}
 			}),
 			vscode.commands.registerCommand('_references-view.showHistoryItem', (item) => {
 				if (item instanceof HistoryItem) {
-					const position = item.anchor.getPosition() ?? item.input.position;
+					const position = item.anchor.guessedTrackedPosition() ?? item.input.position;
 					return vscode.commands.executeCommand('vscode.open', item.input.uri, { selection: new vscode.Range(position, position) });
 				}
 			}),
@@ -260,24 +260,23 @@ class TreeInputHistory implements vscode.TreeDataProvider<HistoryItem>{
 	}
 
 	private _reRunHistoryItem(item: HistoryItem): void {
-		this._inputs.delete(item.input.hash);
-		const newInput = item.input.with(item.anchor.getPosition() ?? item.input.position);
+		this._inputs.delete(item.key);
+		const newInput = item.input.with(item.anchor.guessedTrackedPosition() ?? item.input.position);
 		this._tree.setInput(newInput);
 	}
 
-	add(input: SymbolTreeInput): void {
+	async add(input: SymbolTreeInput) {
 
-		const p = vscode.workspace.openTextDocument(input.uri).then(doc => {
-			const anchor = new WordAnchor(doc, input.position);
-			const range = doc.getWordRangeAtPosition(input.position) ?? doc.getWordRangeAtPosition(input.position, /[^\s]+/);
-			const word = range ? doc.getText(range) : '???';
-			return new HistoryItem(word, anchor, input);
-		});
+		const doc = await vscode.workspace.openTextDocument(input.uri);
 
+		const anchor = new WordAnchor(doc, input.position);
+		const range = doc.getWordRangeAtPosition(input.position) ?? doc.getWordRangeAtPosition(input.position, /[^\s]+/);
+		const word = range ? doc.getText(range) : '???';
+
+		const item = new HistoryItem(JSON.stringify([range?.start ?? input.position, input.uri, input.title]), word, anchor, input);
 		// use filo-ordering of native maps
-		const key = input.hash;
-		this._inputs.delete(key);
-		this._inputs.set(key, p);
+		this._inputs.delete(item.key);
+		this._inputs.set(item.key, item);
 		this._ctxHasHistory.set(true);
 	}
 

@@ -30,7 +30,6 @@ export interface SymbolTreeInput {
 	readonly title: string;
 	readonly uri: vscode.Uri;
 	readonly position: vscode.Position;
-	readonly hash: string;
 
 	resolve(): Promise<SymbolTreeModel>;
 	with(position: vscode.Position): SymbolTreeInput;

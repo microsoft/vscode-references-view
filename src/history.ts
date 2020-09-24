@@ -21,7 +21,7 @@ export class WordAnchor {
         return range && doc.getText(range);
     }
 
-    getPosition(): vscode.Position | undefined {
+    guessedTrackedPosition(): vscode.Position | undefined {
         // funky entry
         if (!this._word) {
             return this._position;

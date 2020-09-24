@@ -12,7 +12,6 @@ export class CallsTreeInput implements SymbolTreeInput {
 
 	readonly title: string;
 	readonly contextValue: string = 'callHierarchy';
-	readonly hash: string;
 
 	constructor(
 		readonly uri: vscode.Uri,
@@ -22,7 +21,6 @@ export class CallsTreeInput implements SymbolTreeInput {
 		this.title = direction === CallsDirection.Incoming
 			? 'Callers Of'
 			: 'Calls From';
-		this.hash = JSON.stringify([this.uri, this.position, this.direction]);
 	}
 
 	async resolve() {

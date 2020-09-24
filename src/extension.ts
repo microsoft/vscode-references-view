@@ -170,7 +170,7 @@ function activate2(context: vscode.ExtensionContext) {
 
 	const refindCommand = (item: HistoryItem) => {
 		if (item instanceof HistoryItem) {
-			vscode.commands.executeCommand(item.commandId, ...[...item.extraArgs, item.uri, item.anchor.getPosition()]);
+			vscode.commands.executeCommand(item.commandId, ...[...item.extraArgs, item.uri, item.anchor.guessedTrackedPosition()]);
 		}
 	};
 
@@ -250,7 +250,7 @@ function activate2(context: vscode.ExtensionContext) {
 
 		} else if (arg instanceof HistoryItem) {
 			uri = arg.uri;
-			pos = arg.anchor.getPosition();
+			pos = arg.anchor.guessedTrackedPosition();
 			preserveFocus = false;
 		}
 
