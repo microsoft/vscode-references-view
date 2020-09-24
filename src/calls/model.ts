@@ -33,7 +33,7 @@ export class CallsTreeInput implements SymbolTreeInput {
 
 		return <SymbolTreeModel>{
 			provider,
-			message: undefined,
+			get message() { return model.roots.length === 0 ? 'No results.' : undefined; },
 			empty: model.roots.length === 0,
 			navigation: model,
 			highlights: model,
@@ -61,10 +61,15 @@ export class CallItem {
 	children?: CallItem[];
 
 	constructor(
+		private readonly _model: CallsModel,
 		readonly item: vscode.CallHierarchyItem,
 		readonly parent: CallItem | undefined,
 		readonly locations: vscode.Location[] | undefined
 	) { }
+
+	remove(): void {
+		this._model.remove(this);
+	}
 }
 
 class CallsModel implements SymbolItemNavigation<CallItem>, SymbolItemEditorHighlights<CallItem> {
@@ -77,16 +82,16 @@ class CallsModel implements SymbolItemNavigation<CallItem>, SymbolItemEditorHigh
 	readonly onDidChange = this._onDidChange.event;
 
 	constructor(readonly direction: CallsDirection, items: vscode.CallHierarchyItem[]) {
-		this.roots = items.map(item => new CallItem(item, undefined, undefined));
+		this.roots = items.map(item => new CallItem(this, item, undefined, undefined));
 	}
 
 	private async _resolveCalls(call: CallItem): Promise<CallItem[]> {
 		if (this.direction === CallsDirection.Incoming) {
 			const calls = await vscode.commands.executeCommand<vscode.CallHierarchyIncomingCall[]>('vscode.provideIncomingCalls', call.item);
-			return calls ? calls.map(item => new CallItem(item.from, call, item.fromRanges.map(range => new vscode.Location(item.from.uri, range)))) : [];
+			return calls ? calls.map(item => new CallItem(this, item.from, call, item.fromRanges.map(range => new vscode.Location(item.from.uri, range)))) : [];
 		} else {
 			const calls = await vscode.commands.executeCommand<vscode.CallHierarchyOutgoingCall[]>('vscode.provideOutgoingCalls', call.item);
-			return calls ? calls.map(item => new CallItem(item.to, call, item.fromRanges.map(range => new vscode.Location(call.item.uri, range)))) : [];
+			return calls ? calls.map(item => new CallItem(this, item.to, call, item.fromRanges.map(range => new vscode.Location(call.item.uri, range)))) : [];
 		}
 	}
 
@@ -96,6 +101,8 @@ class CallsModel implements SymbolItemNavigation<CallItem>, SymbolItemEditorHigh
 		}
 		return call.children;
 	}
+
+	// -- navigation 
 
 	location(item: CallItem) {
 		return new vscode.Location(item.item.uri, item.item.range);
@@ -125,6 +132,14 @@ class CallsModel implements SymbolItemNavigation<CallItem>, SymbolItemEditorHigh
 		}
 	}
 
+	// --- highlights
+
+	getEditorHighlights(item: CallItem, uri: vscode.Uri): vscode.Range[] | undefined {
+		return item.locations
+			?.filter(loc => loc.uri.toString() === uri.toString())
+			.map(loc => loc.range);
+	}
+
 	remove(item: CallItem) {
 		const isInRoot = this.roots.includes(item);
 		const siblings = isInRoot ? this.roots : item.parent?.children;
@@ -132,12 +147,6 @@ class CallsModel implements SymbolItemNavigation<CallItem>, SymbolItemEditorHigh
 			del(siblings, item);
 			this._onDidChange.fire(this);
 		}
-	}
-
-	getEditorHighlights(item: CallItem, uri: vscode.Uri): vscode.Range[] | undefined {
-		return item.locations
-			?.filter(loc => loc.uri.toString() === uri.toString())
-			.map(loc => loc.range);
 	}
 }
 

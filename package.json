@@ -19,7 +19,7 @@
     "Programming Languages"
   ],
   "activationEvents": [
-    "onCommand:references-view.find",
+    "onCommand:references-view.findReferences",
     "onCommand:references-view.findImplementations",
     "onCommand:references-view.showCallHierarchy",
     "onCommand:editor.action.showReferences",
@@ -65,7 +65,7 @@
     },
     "commands": [
       {
-        "command": "references-view.find",
+        "command": "references-view.findReferences",
         "title": "Find All References",
         "category": "References"
       },
@@ -98,7 +98,7 @@
         "category": "References"
       },
       {
-        "command": "references-view.remove",
+        "command": "references-view.removeReferenceItem",
         "title": "Dismiss",
         "icon": "$(close)"
       },
@@ -137,6 +137,11 @@
         "icon": "$(call-incoming)"
       },
       {
+        "command": "references-view.removeCallItem",
+        "title": "Dismiss",
+        "icon": "$(close)"
+      },
+      {
         "command": "references-view.next",
         "title": "Go to Next Reference",
         "enablement": "references-view.canNavigate"
@@ -150,7 +155,7 @@
     "menus": {
       "editor/context": [
         {
-          "command": "references-view.find",
+          "command": "references-view.findReferences",
           "when": "editorHasReferenceProvider",
           "group": "0_navigation@1"
         },
@@ -194,9 +199,14 @@
       ],
       "view/item/context": [
         {
-          "command": "references-view.remove",
+          "command": "references-view.removeReferenceItem",
           "group": "inline",
-          "when": "view == references-view.tree && viewItem == file-item || view == references-view.tree && viewItem == reference-item || view == references-view.tree && viewItem == call-item"
+          "when": "view == references-view.tree && viewItem == file-item || view == references-view.tree && viewItem == reference-item"
+        },
+        {
+          "command": "references-view.removeCallItem",
+          "group": "inline",
+          "when": "view == references-view.tree && viewItem == call-item"
         },
         {
           "command": "references-view.refind",
@@ -204,9 +214,14 @@
           "when": "view == references-view.tree && viewItem == history-item"
         },
         {
-          "command": "references-view.remove",
+          "command": "references-view.removeReferenceItem",
           "group": "1",
-          "when": "view == references-view.tree && viewItem == file-item || view == references-view.tree && viewItem == reference-item || view == references-view.tree && viewItem == call-item"
+          "when": "view == references-view.tree && viewItem == file-item || view == references-view.tree && viewItem == reference-item"
+        },
+        {
+          "command": "references-view.removeCallItem",
+          "group": "1",
+          "when": "view == references-view.tree && viewItem == call-item"
         },
         {
           "command": "references-view.refind",
@@ -230,16 +245,6 @@
         },
         {
           "command": "references-view.showOutgoingCalls",
-          "group": "inline",
-          "when": "view == references-view.tree && viewItem == call-item && references-view.callHierarchyMode == showOutgoing"
-        },
-        {
-          "command": "references-view.showIncomingCalls",
-          "group": "inline",
-          "when": "view == references-view.tree && viewItem == call-item && references-view.callHierarchyMode == showIncoming"
-        },
-        {
-          "command": "references-view.showOutgoingCalls",
           "group": "1",
           "when": "view == references-view.tree && viewItem == call-item"
         },
@@ -251,7 +256,11 @@
       ],
       "commandPalette": [
         {
-          "command": "references-view.remove",
+          "command": "references-view.removeReferenceItem",
+          "when": "never"
+        },
+        {
+          "command": "references-view.removeCallItem",
           "when": "never"
         },
         {
@@ -271,7 +280,7 @@
           "when": "never"
         },
         {
-          "command": "references-view.find",
+          "command": "references-view.findReferences",
           "when": "editorHasReferenceProvider"
         },
         {
@@ -302,7 +311,7 @@
     },
     "keybindings": [
       {
-        "command": "references-view.find",
+        "command": "references-view.findReferences",
         "when": "editorHasReferenceProvider",
         "key": "shift+alt+f12"
       },

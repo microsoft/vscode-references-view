@@ -19,28 +19,43 @@ export function register(tree: SymbolsTree, context: vscode.ExtensionContext): v
 		}
 	};
 
-	function setCallsDirection(value: CallsDirection) {
+	function setCallsDirection(value: CallsDirection, anchor: CallItem | unknown) {
 		direction.value = value;
-		const input = tree.getInput();
-		if (input instanceof CallsTreeInput) {
-			const newInput = new CallsTreeInput(input.uri, input.position, direction.value);
+
+		let newInput: CallsTreeInput | undefined;
+		const oldInput = tree.getInput();
+		if (anchor instanceof CallItem) {
+			newInput = new CallsTreeInput(anchor.item.uri, anchor.item.range.start, direction.value);
+		} else if (oldInput instanceof CallsTreeInput) {
+			newInput = new CallsTreeInput(oldInput.uri, oldInput.position, direction.value);
+		}
+		if (newInput) {
 			tree.setInput(newInput);
 		}
 	}
 
 	context.subscriptions.push(
-		vscode.commands.registerCommand('references-view.showCallHierarchy', () => showCallHierarchy()),
-		vscode.commands.registerCommand('references-view.showOutgoingCalls', () => setCallsDirection(CallsDirection.Outgoing)),
-		vscode.commands.registerCommand('references-view.showIncomingCalls', () => setCallsDirection(CallsDirection.Incoming)),
-		vscode.commands.registerCommand('references-view.showCallItem', (item, preserveFocus?: boolean) => {
-			if (item instanceof CallItem) {
-				return vscode.commands.executeCommand('vscode.open', item.item.uri, {
-					selection: new vscode.Range(item.item.selectionRange.start, item.item.selectionRange.start),
-					preserveFocus
-				});
-			}
-		})
+		vscode.commands.registerCommand('references-view.showCallHierarchy', showCallHierarchy),
+		vscode.commands.registerCommand('references-view.showOutgoingCalls', (item: CallItem | unknown) => setCallsDirection(CallsDirection.Outgoing, item)),
+		vscode.commands.registerCommand('references-view.showIncomingCalls', (item: CallItem | unknown) => setCallsDirection(CallsDirection.Incoming, item)),
+		vscode.commands.registerCommand('references-view.showCallItem', showCallItem),
+		vscode.commands.registerCommand('references-view.removeCallItem', removeCallItem)
 	);
+}
+
+async function showCallItem(item: CallItem | unknown, preserveFocus: boolean = false) {
+	if (item instanceof CallItem) {
+		await vscode.commands.executeCommand('vscode.open', item.item.uri, {
+			selection: new vscode.Range(item.item.selectionRange.start, item.item.selectionRange.start),
+			preserveFocus
+		});
+	}
+}
+
+function removeCallItem(item: CallItem | unknown): void {
+	if (item instanceof CallItem) {
+		item.remove();
+	}
 }
 
 class RichCallsDirection {
