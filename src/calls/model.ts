@@ -61,14 +61,14 @@ export class CallItem {
 	children?: CallItem[];
 
 	constructor(
-		private readonly _model: CallsModel,
+		readonly model: CallsModel,
 		readonly item: vscode.CallHierarchyItem,
 		readonly parent: CallItem | undefined,
 		readonly locations: vscode.Location[] | undefined
 	) { }
 
 	remove(): void {
-		this._model.remove(this);
+		this.model.remove(this);
 	}
 }
 
@@ -135,8 +135,11 @@ class CallsModel implements SymbolItemNavigation<CallItem>, SymbolItemEditorHigh
 	// --- highlights
 
 	getEditorHighlights(item: CallItem, uri: vscode.Uri): vscode.Range[] | undefined {
+		if (!item.locations) {
+			return item.item.uri.toString() === uri.toString() ? [item.item.selectionRange] : undefined;
+		}
 		return item.locations
-			?.filter(loc => loc.uri.toString() === uri.toString())
+			.filter(loc => loc.uri.toString() === uri.toString())
 			.map(loc => loc.range);
 	}
 
@@ -174,7 +177,7 @@ class CallItemDataProvider implements vscode.TreeDataProvider<CallItem> {
 		item.description = element.item.detail;
 		item.contextValue = 'call-item';
 		item.iconPath = CallItemDataProvider._getThemeIcon(element.item.kind);
-		item.command = { command: 'references-view.showCallItem', title: 'Open Call', arguments: [element] };
+		item.command = { command: 'references-view.showCallItem', title: 'Open Call', arguments: [element, true] };
 		item.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
 		return item;
 	}

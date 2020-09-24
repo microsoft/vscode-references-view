@@ -83,7 +83,7 @@ export class SymbolsTree {
 		// reveal & select
 		const selection = model.navigation?.nearest(input.uri, input.position);
 		if (selection && this._tree.visible) {
-			this._tree.reveal(selection, { select: true, focus: true, expand: true });
+			await this._tree.reveal(selection, { select: true, focus: true, expand: true });
 		}
 
 		const disposables: vscode.Disposable[] = [];

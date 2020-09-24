@@ -21,8 +21,9 @@ export class EditorHighlights<T> {
 	constructor(private readonly _view: vscode.TreeView<T>, private readonly _delegate: SymbolItemEditorHighlights<T>) {
 		this.disposables.push(
 			vscode.workspace.onDidChangeTextDocument(e => this._ignore.add(e.document.uri.toString())),
-			vscode.window.onDidChangeActiveTextEditor(() => _view.visible && this._show()),
-			_view.onDidChangeVisibility(e => e.visible ? this._show() : this._hide())
+			vscode.window.onDidChangeActiveTextEditor(() => _view.visible && this.update()),
+			_view.onDidChangeVisibility(e => e.visible ? this._show() : this._hide()),
+			_view.onDidChangeSelection(() => _view.visible && this.update())
 		);
 		this._show();
 	}

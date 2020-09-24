@@ -272,7 +272,7 @@ class LocationsTreeDataProvider implements Required<vscode.TreeDataProvider<File
 			const result = new vscode.TreeItem2(label);
 			result.collapsibleState = vscode.TreeItemCollapsibleState.None;
 			result.contextValue = 'reference-item';
-			result.command = { command: 'references-view.showReferenceItem', title: 'Open Reference', arguments: [element] };
+			result.command = { command: 'references-view.showReferenceItem', title: 'Open Reference', arguments: [element, true] };
 			return result;
 		}
 	}
