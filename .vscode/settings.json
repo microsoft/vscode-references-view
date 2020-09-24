@@ -1,6 +1,7 @@
 {
     "editor.insertSpaces": false,
     "typescript.format.semicolons": "insert",
+    // "typescript.referencesCodeLens.enabled": true,
     "typescript.tsserver.experimental.enableProjectDiagnostics": true,
     "editor.codeActionsOnSave": {
         // "source.fixAll": true,

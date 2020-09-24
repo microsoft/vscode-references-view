@@ -72,8 +72,6 @@ export class CallItem {
 
 class CallsModel implements SymbolItemNavigation<CallItem>, SymbolItemEditorHighlights<CallItem> {
 
-	readonly source = 'callHierarchy';
-
 	readonly roots: CallItem[] = [];
 
 	private readonly _onDidChange = new vscode.EventEmitter<CallsModel>();
@@ -158,9 +156,7 @@ class CallItemDataProvider implements vscode.TreeDataProvider<CallItem> {
 
 	private readonly _modelListener: vscode.Disposable;
 
-	constructor(
-		private _model: CallsModel
-	) {
+	constructor(private _model: CallsModel) {
 		this._modelListener = _model.onDidChange(e => this._emitter.fire(e instanceof CallItem ? e : undefined));
 	}
 
