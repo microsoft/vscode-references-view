@@ -19,6 +19,7 @@
     "Programming Languages"
   ],
   "activationEvents": [
+    "onCommand:references-view.find",
     "onCommand:references-view.findReferences",
     "onCommand:references-view.findImplementations",
     "onCommand:references-view.showCallHierarchy",
