@@ -6,10 +6,10 @@
 import * as vscode from 'vscode';
 import * as calls from './calls';
 import * as references from './references';
-import { Api, SymbolTreeInput } from './references-view';
+import { SymbolTree, SymbolTreeInput } from './references-view';
 import { SymbolsTree } from './tree';
 
-export function activate(context: vscode.ExtensionContext): Api {
+export function activate(context: vscode.ExtensionContext): SymbolTree {
 
 	const tree = new SymbolsTree();
 

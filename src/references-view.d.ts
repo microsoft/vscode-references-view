@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 
-export interface Api {
+export interface SymbolTree {
 
 	/**
 	 * Set the contents of the references viewlet. 
