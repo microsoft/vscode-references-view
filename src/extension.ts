@@ -4,21 +4,21 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { SymbolTreeInput } from './api';
+import { Api, SymbolTreeInput } from './api';
 import * as calls from './calls';
 import * as references from './references';
 import { SymbolsTree } from './tree';
 
-export function activate(context: vscode.ExtensionContext) {
+export function activate(context: vscode.ExtensionContext): Api {
 
 	const tree = new SymbolsTree();
+
+	references.register(tree, context);
+	calls.register(tree, context);
 
 	function setInput(input: SymbolTreeInput) {
 		tree.setInput(input);
 	}
-
-	references.register(tree, context);
-	calls.register(tree, context);
 
 	return { setInput };
 }

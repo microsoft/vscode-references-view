@@ -13,8 +13,7 @@ export class ReferencesTreeInput implements SymbolTreeInput {
 
 	constructor(
 		readonly title: string,
-		readonly uri: vscode.Uri,
-		readonly position: vscode.Position,
+		readonly location: vscode.Location,
 		private readonly _command: string,
 	) {
 		this.contextValue = _command;
@@ -22,7 +21,7 @@ export class ReferencesTreeInput implements SymbolTreeInput {
 
 	async resolve() {
 
-		const result = Promise.resolve(vscode.commands.executeCommand<vscode.Location[] | vscode.LocationLink[]>(this._command, this.uri, this.position));
+		const result = Promise.resolve(vscode.commands.executeCommand<vscode.Location[] | vscode.LocationLink[]>(this._command, this.location.uri, this.location.range.start));
 		const model = new ReferencesModel(await result ?? []);
 		const provider = new ReferencesTreeDataProvider(model);
 
@@ -39,7 +38,7 @@ export class ReferencesTreeInput implements SymbolTreeInput {
 	}
 
 	with(position: vscode.Position): ReferencesTreeInput {
-		return new ReferencesTreeInput(this.title, this.uri, position, this._command);
+		return new ReferencesTreeInput(this.title, new vscode.Location(this.location.uri, position), this._command);
 	}
 }
 

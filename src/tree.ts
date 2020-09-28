@@ -45,7 +45,7 @@ export class SymbolsTree {
 
 	async setInput(input: SymbolTreeInput) {
 
-		if (!await isValidRequestPosition(input.uri, input.position)) {
+		if (!await isValidRequestPosition(input.location.uri, input.location.range.start)) {
 			this.clearInput();
 			return;
 		}
@@ -84,7 +84,7 @@ export class SymbolsTree {
 		this._navigation.update(model.navigation);
 
 		// reveal & select
-		const selection = model.navigation?.nearest(input.uri, input.position);
+		const selection = model.navigation?.nearest(input.location.uri, input.location.range.start);
 		if (selection && this._tree.visible) {
 			await this._tree.reveal(selection, { select: true, focus: true, expand: true });
 		}
@@ -99,11 +99,13 @@ export class SymbolsTree {
 		}
 
 		// listener
-		disposables.push(model.provider.onDidChangeTreeData(() => {
-			this._tree.title = input.title;
-			this._tree.message = model.message;
-			highlights?.update();
-		}));
+		if (model.provider.onDidChangeTreeData) {
+			disposables.push(model.provider.onDidChangeTreeData(() => {
+				this._tree.title = input.title;
+				this._tree.message = model.message;
+				highlights?.update();
+			}));
+		}
 		if (typeof model.dispose === 'function') {
 			disposables.push(new vscode.Disposable(() => model.dispose!()));
 		}
@@ -124,19 +126,19 @@ export class SymbolsTree {
 // --- tree data
 
 interface ActiveTreeDataProviderWrapper {
-	provider: Promise<Required<vscode.TreeDataProvider<any>>>;
+	provider: Promise<vscode.TreeDataProvider<any>>;
 }
 
 class TreeDataProviderDelegate implements vscode.TreeDataProvider<undefined> {
 
-	provider?: Promise<Required<vscode.TreeDataProvider<any>>>;
+	provider?: Promise<vscode.TreeDataProvider<any>>;
 
 	private _sessionDispoables?: vscode.Disposable;
 	private _onDidChange = new vscode.EventEmitter<any>();
 
 	readonly onDidChangeTreeData = this._onDidChange.event;
 
-	update(provider: Promise<Required<vscode.TreeDataProvider<any>>>) {
+	update(provider: Promise<vscode.TreeDataProvider<any>>) {
 
 		this._sessionDispoables?.dispose();
 		this._sessionDispoables = undefined;
@@ -146,7 +148,7 @@ class TreeDataProviderDelegate implements vscode.TreeDataProvider<undefined> {
 		this.provider = provider;
 
 		provider.then(value => {
-			if (this.provider === provider) {
+			if (this.provider === provider && value.onDidChangeTreeData) {
 				this._sessionDispoables = value.onDidChangeTreeData(this._onDidChange.fire, this._onDidChange);
 			}
 		}).catch(err => {
@@ -167,7 +169,8 @@ class TreeDataProviderDelegate implements vscode.TreeDataProvider<undefined> {
 
 	async getParent(element: unknown) {
 		this._assertProvider();
-		return (await this.provider).getParent(element);
+		const provider = await this.provider;
+		return provider.getParent ? provider.getParent(element) : undefined;
 	}
 
 	private _assertProvider(): asserts this is ActiveTreeDataProviderWrapper {
@@ -189,7 +192,7 @@ class HistoryItem {
 		readonly anchor: WordAnchor,
 		readonly input: SymbolTreeInput,
 	) {
-		this.description = `${vscode.workspace.asRelativePath(input.uri)} • ${input.title.toLocaleLowerCase()}`;
+		this.description = `${vscode.workspace.asRelativePath(input.location.uri)} • ${input.title.toLocaleLowerCase()}`;
 	}
 }
 
@@ -223,8 +226,8 @@ class TreeInputHistory implements vscode.TreeDataProvider<HistoryItem>{
 			}),
 			vscode.commands.registerCommand('_references-view.showHistoryItem', (item) => {
 				if (item instanceof HistoryItem) {
-					const position = item.anchor.guessedTrackedPosition() ?? item.input.position;
-					return vscode.commands.executeCommand('vscode.open', item.input.uri, { selection: new vscode.Range(position, position) });
+					const position = item.anchor.guessedTrackedPosition() ?? item.input.location.range.start;
+					return vscode.commands.executeCommand('vscode.open', item.input.location.uri, { selection: new vscode.Range(position, position) });
 				}
 			}),
 			vscode.commands.registerCommand('references-view.pickFromHistory', async () => {
@@ -252,19 +255,19 @@ class TreeInputHistory implements vscode.TreeDataProvider<HistoryItem>{
 
 	private _reRunHistoryItem(item: HistoryItem): void {
 		this._inputs.delete(item.key);
-		const newInput = item.input.with(item.anchor.guessedTrackedPosition() ?? item.input.position);
+		const newInput = item.input.with(item.anchor.guessedTrackedPosition() ?? item.input.location.range.start);
 		this._tree.setInput(newInput);
 	}
 
 	async add(input: SymbolTreeInput) {
 
-		const doc = await vscode.workspace.openTextDocument(input.uri);
+		const doc = await vscode.workspace.openTextDocument(input.location.uri);
 
-		const anchor = new WordAnchor(doc, input.position);
-		const range = doc.getWordRangeAtPosition(input.position) ?? doc.getWordRangeAtPosition(input.position, /[^\s]+/);
+		const anchor = new WordAnchor(doc, input.location.range.start);
+		const range = doc.getWordRangeAtPosition(input.location.range.start) ?? doc.getWordRangeAtPosition(input.location.range.start, /[^\s]+/);
 		const word = range ? doc.getText(range) : '???';
 
-		const item = new HistoryItem(JSON.stringify([range?.start ?? input.position, input.uri, input.title]), word, anchor, input);
+		const item = new HistoryItem(JSON.stringify([range?.start ?? input.location.range.start, input.location.uri, input.title]), word, anchor, input);
 		// use filo-ordering of native maps
 		this._inputs.delete(item.key);
 		this._inputs.set(item.key, item);

@@ -14,8 +14,7 @@ export class CallsTreeInput implements SymbolTreeInput {
 	readonly contextValue: string = 'callHierarchy';
 
 	constructor(
-		readonly uri: vscode.Uri,
-		readonly position: vscode.Position,
+		readonly location: vscode.Location,
 		readonly direction: CallsDirection,
 	) {
 		this.title = direction === CallsDirection.Incoming
@@ -25,7 +24,7 @@ export class CallsTreeInput implements SymbolTreeInput {
 
 	async resolve() {
 
-		const items = await Promise.resolve(vscode.commands.executeCommand<vscode.CallHierarchyItem[]>('vscode.prepareCallHierarchy', this.uri, this.position));
+		const items = await Promise.resolve(vscode.commands.executeCommand<vscode.CallHierarchyItem[]>('vscode.prepareCallHierarchy', this.location.uri, this.location.range.start));
 		const model = new CallsModel(this.direction, items ?? []);
 		const provider = new CallItemDataProvider(model);
 
@@ -42,7 +41,7 @@ export class CallsTreeInput implements SymbolTreeInput {
 	}
 
 	with(position: vscode.Position): CallsTreeInput {
-		return new CallsTreeInput(this.uri, position, this.direction);
+		return new CallsTreeInput(new vscode.Location(this.location.uri, position), this.direction);
 	}
 }
 

@@ -11,7 +11,7 @@ export function register(tree: SymbolsTree, context: vscode.ExtensionContext): v
 
 	function findLocations(title: string, command: string) {
 		if (vscode.window.activeTextEditor) {
-			const input = new ReferencesTreeInput(title, vscode.window.activeTextEditor.document.uri, vscode.window.activeTextEditor.selection.active, command);
+			const input = new ReferencesTreeInput(title, new vscode.Location(vscode.window.activeTextEditor.document.uri, vscode.window.activeTextEditor.selection.active), command);
 			tree.setInput(input);
 		}
 	}

@@ -14,7 +14,7 @@ export function register(tree: SymbolsTree, context: vscode.ExtensionContext): v
 
 	function showCallHierarchy() {
 		if (vscode.window.activeTextEditor) {
-			const input = new CallsTreeInput(vscode.window.activeTextEditor.document.uri, vscode.window.activeTextEditor.selection.active, direction.value);
+			const input = new CallsTreeInput(new vscode.Location(vscode.window.activeTextEditor.document.uri, vscode.window.activeTextEditor.selection.active), direction.value);
 			tree.setInput(input);
 		}
 	};
@@ -25,9 +25,9 @@ export function register(tree: SymbolsTree, context: vscode.ExtensionContext): v
 		let newInput: CallsTreeInput | undefined;
 		const oldInput = tree.getInput();
 		if (anchor instanceof CallItem) {
-			newInput = new CallsTreeInput(anchor.item.uri, anchor.item.range.start, direction.value);
+			newInput = new CallsTreeInput(new vscode.Location(anchor.item.uri, anchor.item.range.start), direction.value);
 		} else if (oldInput instanceof CallsTreeInput) {
-			newInput = new CallsTreeInput(oldInput.uri, oldInput.position, direction.value);
+			newInput = new CallsTreeInput(oldInput.location, direction.value);
 		}
 		if (newInput) {
 			tree.setInput(newInput);
