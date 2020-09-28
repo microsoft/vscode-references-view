@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { SymbolItemEditorHighlights } from './api';
+import { SymbolItemEditorHighlights } from './references-view';
 
 export class EditorHighlights<T> {
 

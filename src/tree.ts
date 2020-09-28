@@ -4,9 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { SymbolTreeInput } from './api';
 import { EditorHighlights } from './highlights';
 import { Navigation } from './navigation';
+import { SymbolTreeInput } from './references-view';
 import { ContextKey, isValidRequestPosition, WordAnchor } from './utils';
 
 export class SymbolsTree {

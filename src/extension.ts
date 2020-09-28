@@ -4,9 +4,9 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { Api, SymbolTreeInput } from './api';
 import * as calls from './calls';
 import * as references from './references';
+import { Api, SymbolTreeInput } from './references-view';
 import { SymbolsTree } from './tree';
 
 export function activate(context: vscode.ExtensionContext): Api {
