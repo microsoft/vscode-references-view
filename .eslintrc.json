@@ -9,6 +9,10 @@
         "@typescript-eslint"
     ],
     "rules": {
+        "indent": [
+            "warn",
+            "tab"
+        ],
         "@typescript-eslint/semi": "warn",
         "curly": "warn",
         "eqeqeq": "warn",
