@@ -25,10 +25,13 @@ export class ReferencesTreeInput implements SymbolTreeInput<FileItem | Reference
 		const model = new ReferencesModel(await result ?? []);
 		const provider = new ReferencesTreeDataProvider(model);
 
+		if (model.items.length === 0) {
+			return;
+		}
+
 		return {
 			provider,
 			get message() { return model.message; },
-			empty: model.items.length === 0,
 			navigation: model,
 			highlights: model,
 			dispose(): void {

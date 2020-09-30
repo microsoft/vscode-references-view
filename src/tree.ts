@@ -62,17 +62,17 @@ export class SymbolsTree {
 		this._tree.title = input.title;
 		this._tree.message = newInputKind ? undefined : this._tree.message;
 
-		const modelPromise = input.resolve();
+		const modelPromise = Promise.resolve(input.resolve());
 
 		// set promise to tree data provider to trigger tree loading UI
-		this._provider.update(modelPromise.then(model => model.provider));
+		this._provider.update(modelPromise.then(model => model?.provider ?? this._history));
 
 		const model = await modelPromise;
 		if (this._input !== input) {
 			return;
 		}
 
-		if (model.empty) {
+		if (!model) {
 			this.clearInput();
 			return;
 		}

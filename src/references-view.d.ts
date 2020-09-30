@@ -40,9 +40,10 @@ export interface SymbolTreeInput<T> {
 	readonly location: vscode.Location;
 
 	/**
-	 * Resolve this input to a model that contains the actual data.
+	 * Resolve this input to a model that contains the actual data. When there are no result 
+	 * than `undefined` or `null` should be returned.
 	 */
-	resolve(): Promise<SymbolTreeModel<T>>;
+	resolve(): vscode.ProviderResult<SymbolTreeModel<T>>;
 
 	/**
 	 * This function is called when re-running from history. The symbols tree has tracked
@@ -60,12 +61,6 @@ export interface SymbolTreeInput<T> {
  * A symbol tree model which is used to populate the symbols tree.
  */
 export interface SymbolTreeModel<T> {
-
-	/**
-	 * Signal that there are no results. This is only read after receiving
-	 * the input and used to for a message like "No results, try a previous search..."
-	 */
-	readonly empty: boolean;
 
 	/**
 	 * A tree data provider which is used to populate the symbols tree.

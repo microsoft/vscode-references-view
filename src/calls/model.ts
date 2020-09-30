@@ -28,10 +28,13 @@ export class CallsTreeInput implements SymbolTreeInput<CallItem> {
 		const model = new CallsModel(this.direction, items ?? []);
 		const provider = new CallItemDataProvider(model);
 
+		if (model.roots.length === 0) {
+			return;
+		}
+
 		return {
 			provider,
 			get message() { return model.roots.length === 0 ? 'No results.' : undefined; },
-			empty: model.roots.length === 0,
 			navigation: model,
 			highlights: model,
 			dispose() {
