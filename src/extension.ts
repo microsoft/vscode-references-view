@@ -16,7 +16,7 @@ export function activate(context: vscode.ExtensionContext): SymbolTree {
 	references.register(tree, context);
 	calls.register(tree, context);
 
-	function setInput(input: SymbolTreeInput) {
+	function setInput(input: SymbolTreeInput<unknown>) {
 		tree.setInput(input);
 	}
 

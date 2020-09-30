@@ -12,7 +12,7 @@ export interface SymbolTree {
 	 * 
 	 * @param input A symbol tree input object
 	 */
-	setInput(input: SymbolTreeInput): void;
+	setInput(input: SymbolTreeInput<unknown>): void;
 }
 
 /**
@@ -20,7 +20,7 @@ export interface SymbolTree {
  * Inputs must be anchored at a code location, they must have a title, and they 
  * must resolve to a model.
  */
-export interface SymbolTreeInput {
+export interface SymbolTreeInput<T> {
 
 	/**
 	 * The value of the `reference-list.source` context key. Use this to control
@@ -42,7 +42,7 @@ export interface SymbolTreeInput {
 	/**
 	 * Resolve this input to a model that contains the actual data.
 	 */
-	resolve(): Promise<SymbolTreeModel>;
+	resolve(): Promise<SymbolTreeModel<T>>;
 
 	/**
 	 * This function is called when re-running from history. The symbols tree has tracked
@@ -53,13 +53,13 @@ export interface SymbolTreeInput {
 	 * @param position The position at which the new input should be anchored.
 	 * @returns A new input which location is anchored at the position.
 	 */
-	with(position: vscode.Position): SymbolTreeInput;
+	with(position: vscode.Position): SymbolTreeInput<T>;
 }
 
 /**
  * A symbol tree model which is used to populate the symbols tree.
  */
-export interface SymbolTreeModel {
+export interface SymbolTreeModel<T> {
 
 	/**
 	 * Signal that there are no results. This is only read after receiving
@@ -70,7 +70,7 @@ export interface SymbolTreeModel {
 	/**
 	 * A tree data provider which is used to populate the symbols tree.
 	 */
-	provider: vscode.TreeDataProvider<unknown>;
+	provider: vscode.TreeDataProvider<T>;
 
 	/**
 	 * An optional message that is displayed above the tree. Whenever the provider
@@ -82,13 +82,13 @@ export interface SymbolTreeModel {
 	 * Optional support for symbol navigation. When implemented, navigation commands like
 	 * "Go to Next" and "Go to Previous" will be working with this model.
 	 */
-	navigation?: SymbolItemNavigation<unknown>;
+	navigation?: SymbolItemNavigation<T>;
 
 	/**
 	 * Optional support for editor highlights. WHen implemented, the editor will highlight 
 	 * symbol ranges in the source code.
 	 */
-	highlights?: SymbolItemEditorHighlights<unknown>;
+	highlights?: SymbolItemEditorHighlights<T>;
 
 	/**
 	 * Optional dispose function which is invoked when this model is

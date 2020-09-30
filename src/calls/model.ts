@@ -4,11 +4,11 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput, SymbolTreeModel } from '../references-view';
+import { SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput } from '../references-view';
 import { del, tail } from '../utils';
 
 
-export class CallsTreeInput implements SymbolTreeInput {
+export class CallsTreeInput implements SymbolTreeInput<CallItem> {
 
 	readonly title: string;
 	readonly contextValue: string = 'callHierarchy';
@@ -28,7 +28,7 @@ export class CallsTreeInput implements SymbolTreeInput {
 		const model = new CallsModel(this.direction, items ?? []);
 		const provider = new CallItemDataProvider(model);
 
-		return <SymbolTreeModel>{
+		return {
 			provider,
 			get message() { return model.roots.length === 0 ? 'No results.' : undefined; },
 			empty: model.roots.length === 0,

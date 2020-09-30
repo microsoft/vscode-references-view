@@ -4,10 +4,10 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput, SymbolTreeModel } from '../references-view';
+import { SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput } from '../references-view';
 import { del, getPreviewChunks, tail } from '../utils';
 
-export class ReferencesTreeInput implements SymbolTreeInput {
+export class ReferencesTreeInput implements SymbolTreeInput<FileItem | ReferenceItem> {
 
 	readonly contextValue: string;
 
@@ -25,7 +25,7 @@ export class ReferencesTreeInput implements SymbolTreeInput {
 		const model = new ReferencesModel(await result ?? []);
 		const provider = new ReferencesTreeDataProvider(model);
 
-		return <SymbolTreeModel>{
+		return {
 			provider,
 			get message() { return model.message; },
 			empty: model.items.length === 0,

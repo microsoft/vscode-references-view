@@ -22,7 +22,7 @@ export class SymbolsTree {
 	private readonly _tree: vscode.TreeView<unknown>;
 	private readonly _navigation: Navigation;
 
-	private _input?: SymbolTreeInput;
+	private _input?: SymbolTreeInput<unknown>;
 	private _sessionDisposable?: vscode.Disposable;
 
 	constructor() {
@@ -39,11 +39,11 @@ export class SymbolsTree {
 		this._sessionDisposable?.dispose();
 	}
 
-	getInput(): SymbolTreeInput | undefined {
+	getInput(): SymbolTreeInput<unknown> | undefined {
 		return this._input;
 	}
 
-	async setInput(input: SymbolTreeInput) {
+	async setInput(input: SymbolTreeInput<unknown>) {
 
 		if (!await isValidRequestPosition(input.location.uri, input.location.range.start)) {
 			this.clearInput();
@@ -190,7 +190,7 @@ class HistoryItem {
 		readonly key: string,
 		readonly word: string,
 		readonly anchor: WordAnchor,
-		readonly input: SymbolTreeInput,
+		readonly input: SymbolTreeInput<unknown>,
 	) {
 		this.description = `${vscode.workspace.asRelativePath(input.location.uri)} • ${input.title.toLocaleLowerCase()}`;
 	}
@@ -260,7 +260,7 @@ class TreeInputHistory implements vscode.TreeDataProvider<HistoryItem>{
 		this._tree.setInput(newInput);
 	}
 
-	async add(input: SymbolTreeInput) {
+	async add(input: SymbolTreeInput<unknown>) {
 
 		const doc = await vscode.workspace.openTextDocument(input.location.uri);
 
