@@ -40,15 +40,20 @@ export interface SymbolTreeInput {
 	readonly location: vscode.Location;
 
 	/**
-	 * Return a new input object with the given position. This is used when the editor has tracked
-	 * an input and re-runs it from history.
-	 */
-	with(position: vscode.Position): SymbolTreeInput;
-
-	/**
 	 * Resolve this input to a model that contains the actual data.
 	 */
 	resolve(): Promise<SymbolTreeModel>;
+
+	/**
+	 * This function is called when re-running from history. The symbols tree has tracked
+	 * the original location of this input and that is now passed to this input. The 
+	 * implementation of this function should return a clone where the `location`-property
+	 * uses the passed `position`.
+	 * 
+	 * @param position The position at which the new input should be anchored.
+	 * @returns A new input which location is anchored at the position.
+	 */
+	with(position: vscode.Position): SymbolTreeInput;
 }
 
 /**
