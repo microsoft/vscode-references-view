@@ -5,6 +5,20 @@
 
 import * as vscode from 'vscode';
 
+/**
+ * This interface describes the shape for the references viewlet API. It consists 
+ * of a single `setInput` function which must be called with a full implementation 
+ * of the `SymbolTreeInput`-interface. To acquire this API use the default mechanics, e.g:
+ * 
+ * ```ts
+ * // get references viewlet API
+ * const api = await vscode.extensions.getExtension<SymbolTree>('ms-vscode.references-view').activate();
+ * 
+ * // instantiate and set input which updates the view
+ * const myInput: SymbolTreeInput<MyItems> = ...
+ * api.setInput(myInput)
+ * ```
+ */
 export interface SymbolTree {
 
 	/**
