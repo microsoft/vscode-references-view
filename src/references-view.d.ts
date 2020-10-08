@@ -63,12 +63,12 @@ export interface SymbolTreeInput<T> {
 	 * This function is called when re-running from history. The symbols tree has tracked
 	 * the original location of this input and that is now passed to this input. The 
 	 * implementation of this function should return a clone where the `location`-property
-	 * uses the passed `position`.
+	 * uses the provided `location`
 	 * 
-	 * @param position The position at which the new input should be anchored.
+	 * @param location The location at which the new input should be anchored.
 	 * @returns A new input which location is anchored at the position.
 	 */
-	with(position: vscode.Position): SymbolTreeInput<T>;
+	with(location: vscode.Location): SymbolTreeInput<T>;
 }
 
 /**

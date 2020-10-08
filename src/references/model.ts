@@ -40,8 +40,8 @@ export class ReferencesTreeInput implements SymbolTreeInput<FileItem | Reference
 		};
 	}
 
-	with(position: vscode.Position): ReferencesTreeInput {
-		return new ReferencesTreeInput(this.title, new vscode.Location(this.location.uri, position), this._command);
+	with(location: vscode.Location): ReferencesTreeInput {
+		return new ReferencesTreeInput(this.title, location, this._command);
 	}
 }
 

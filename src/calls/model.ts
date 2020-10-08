@@ -43,8 +43,8 @@ export class CallsTreeInput implements SymbolTreeInput<CallItem> {
 		};
 	}
 
-	with(position: vscode.Position): CallsTreeInput {
-		return new CallsTreeInput(new vscode.Location(this.location.uri, position), this.direction);
+	with(location: vscode.Location): CallsTreeInput {
+		return new CallsTreeInput(location, this.direction);
 	}
 }
 
