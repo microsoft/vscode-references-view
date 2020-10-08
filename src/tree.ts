@@ -256,7 +256,12 @@ class TreeInputHistory implements vscode.TreeDataProvider<HistoryItem>{
 	private _reRunHistoryItem(item: HistoryItem): void {
 		this._inputs.delete(item.key);
 		const newPosition = item.anchor.guessedTrackedPosition();
-		const newInput = newPosition ? item.input.with(new vscode.Location(item.input.location.uri, newPosition)) : item.input;
+		let newInput = item.input;
+		// create a new input when having a tracked position which is
+		// different than the original position.
+		if (newPosition && !item.input.location.range.start.isEqual(newPosition)) {
+			newInput = item.input.with(new vscode.Location(item.input.location.uri, newPosition));
+		}
 		this._tree.setInput(newInput);
 	}
 
