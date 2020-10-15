@@ -15,19 +15,26 @@ export class ReferencesTreeInput implements SymbolTreeInput<FileItem | Reference
 		readonly title: string,
 		readonly location: vscode.Location,
 		private readonly _command: string,
+		private readonly _result?: vscode.Location[] | vscode.LocationLink[]
 	) {
 		this.contextValue = _command;
 	}
 
 	async resolve() {
 
-		const result = Promise.resolve(vscode.commands.executeCommand<vscode.Location[] | vscode.LocationLink[]>(this._command, this.location.uri, this.location.range.start));
-		const model = new ReferencesModel(await result ?? []);
-		const provider = new ReferencesTreeDataProvider(model);
+		let model: ReferencesModel;
+		if (this._result) {
+			model = new ReferencesModel(this._result);
+		} else {
+			const resut = await Promise.resolve(vscode.commands.executeCommand<vscode.Location[] | vscode.LocationLink[]>(this._command, this.location.uri, this.location.range.start));
+			model = new ReferencesModel(resut ?? []);
+		}
 
 		if (model.items.length === 0) {
 			return;
 		}
+
+		const provider = new ReferencesTreeDataProvider(model);
 
 		return {
 			provider,

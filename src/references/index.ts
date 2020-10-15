@@ -27,6 +27,31 @@ export function register(tree: SymbolsTree, context: vscode.ExtensionContext): v
 		vscode.commands.registerCommand('references-view.copyAll', copyAllCommand),
 		vscode.commands.registerCommand('references-view.copyPath', copyPathCommand),
 	);
+
+
+	// --- references.preferredLocation setting
+
+	let showReferencesDisposable: vscode.Disposable | undefined;
+	const config = 'references.preferredLocation';
+	function updateShowReferences(event?: vscode.ConfigurationChangeEvent) {
+		if (event && !event.affectsConfiguration(config)) {
+			return;
+		}
+		const value = vscode.workspace.getConfiguration().get<string>(config);
+
+		showReferencesDisposable?.dispose();
+		showReferencesDisposable = undefined;
+
+		if (value === 'view') {
+			showReferencesDisposable = vscode.commands.registerCommand('editor.action.showReferences', async (uri: vscode.Uri, position: vscode.Position, locations: vscode.Location[]) => {
+				const input = new ReferencesTreeInput('References', new vscode.Location(uri, position), 'vscode.executeReferenceProvider', locations);
+				tree.setInput(input);
+			});
+		}
+	};
+	context.subscriptions.push(vscode.workspace.onDidChangeConfiguration(updateShowReferences));
+	context.subscriptions.push({ dispose: () => showReferencesDisposable?.dispose() });
+	updateShowReferences();
 }
 
 const copyAllCommand = async (item: ReferenceItem | FileItem | unknown) => {
