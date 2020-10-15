@@ -338,9 +338,11 @@ export class ReferenceItem {
 		}
 		if (warmUpNext) {
 			// load next document once this document has been loaded
-			const next = <FileItem>this.file.model.next(this.file);
-			if (next !== this.file) {
+			const next = this.file.model.next(this.file);
+			if (next instanceof FileItem && next !== this.file) {
 				vscode.workspace.openTextDocument(next.uri);
+			} else if (next instanceof ReferenceItem) {
+				vscode.workspace.openTextDocument(next.location.uri);
 			}
 		}
 		return this._document;
