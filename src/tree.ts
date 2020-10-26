@@ -219,7 +219,7 @@ class TreeInputHistory implements vscode.TreeDataProvider<HistoryItem>{
 				}
 			}),
 			vscode.commands.registerCommand('references-view.refresh', () => {
-				const [item] = this._inputs.values();
+				const item = Array.from(this._inputs.values()).pop();
 				if (item) {
 					this._reRunHistoryItem(item);
 				}
