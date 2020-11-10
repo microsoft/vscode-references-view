@@ -173,7 +173,17 @@ class CallItemDataProvider implements vscode.TreeDataProvider<CallItem> {
 		item.description = element.item.detail;
 		item.contextValue = 'call-item';
 		item.iconPath = CallItemDataProvider._getThemeIcon(element.item.kind);
-		item.command = { command: 'references-view.showCallItem', title: 'Open Call', arguments: [element, true] };
+		item.command = {
+			command: 'vscode.open',
+			title: 'Open Call',
+			arguments: [
+				element.item.uri,
+				<vscode.TextDocumentShowOptions>{
+					selection: element.item.selectionRange.with({ end: element.item.selectionRange.start }),
+					preserveFocus: true
+				}
+			]
+		};
 		item.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;
 		return item;
 	}

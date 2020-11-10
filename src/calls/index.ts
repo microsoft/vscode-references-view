@@ -38,18 +38,8 @@ export function register(tree: SymbolsTree, context: vscode.ExtensionContext): v
 		vscode.commands.registerCommand('references-view.showCallHierarchy', showCallHierarchy),
 		vscode.commands.registerCommand('references-view.showOutgoingCalls', (item: CallItem | unknown) => setCallsDirection(CallsDirection.Outgoing, item)),
 		vscode.commands.registerCommand('references-view.showIncomingCalls', (item: CallItem | unknown) => setCallsDirection(CallsDirection.Incoming, item)),
-		vscode.commands.registerCommand('references-view.showCallItem', showCallItem),
 		vscode.commands.registerCommand('references-view.removeCallItem', removeCallItem)
 	);
-}
-
-async function showCallItem(item: CallItem | unknown, preserveFocus: boolean = false) {
-	if (item instanceof CallItem) {
-		await vscode.commands.executeCommand('vscode.open', item.item.uri, {
-			selection: new vscode.Range(item.item.selectionRange.start, item.item.selectionRange.start),
-			preserveFocus
-		});
-	}
 }
 
 function removeCallItem(item: CallItem | unknown): void {

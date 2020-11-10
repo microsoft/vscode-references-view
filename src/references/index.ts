@@ -21,7 +21,6 @@ export function register(tree: SymbolsTree, context: vscode.ExtensionContext): v
 		vscode.commands.registerCommand('references-view.findImplementations', () => findLocations('Implementations', 'vscode.executeImplementationProvider')),
 		// --- legacy name
 		vscode.commands.registerCommand('references-view.find', (...args: any[]) => vscode.commands.executeCommand('references-view.findReferences', ...args)),
-		vscode.commands.registerCommand('references-view.showReferenceItem', showReferenceItem),
 		vscode.commands.registerCommand('references-view.removeReferenceItem', removeReferenceItem),
 		vscode.commands.registerCommand('references-view.copy', copyCommand),
 		vscode.commands.registerCommand('references-view.copyAll', copyAllCommand),
@@ -62,14 +61,6 @@ const copyAllCommand = async (item: ReferenceItem | FileItem | unknown) => {
 	}
 };
 
-function showReferenceItem(item: ReferenceItem | unknown, preserveFocus: boolean = false) {
-	if (item instanceof ReferenceItem) {
-		return vscode.commands.executeCommand('vscode.open', item.location.uri, {
-			selection: new vscode.Range(item.location.range.start, item.location.range.start),
-			preserveFocus
-		});
-	}
-}
 function removeReferenceItem(item: FileItem | ReferenceItem | unknown) {
 	if (item instanceof FileItem) {
 		item.remove();

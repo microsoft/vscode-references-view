@@ -287,7 +287,17 @@ class ReferencesTreeDataProvider implements Required<vscode.TreeDataProvider<Fil
 			const result = new vscode.TreeItem2(label);
 			result.collapsibleState = vscode.TreeItemCollapsibleState.None;
 			result.contextValue = 'reference-item';
-			result.command = { command: 'references-view.showReferenceItem', title: 'Open Reference', arguments: [element, true] };
+			result.command = {
+				command: 'vscode.open',
+				title: 'Open Reference',
+				arguments: [
+					element.location.uri,
+					<vscode.TextDocumentShowOptions>{
+						selection: range.with({ end: range.start }),
+						preserveFocus: true
+					}
+				]
+			};
 			return result;
 		}
 	}
