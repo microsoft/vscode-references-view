@@ -16,7 +16,7 @@ export class Navigation {
 
 	constructor(private readonly _view: vscode.TreeView<unknown>) {
 		this._disposables.push(
-			vscode.commands.registerCommand('references-view.next', () => this.next(true)),
+			vscode.commands.registerCommand('references-view.next', () => this.next(false)),
 			vscode.commands.registerCommand('references-view.prev', () => this.previous(false)),
 		);
 	}
