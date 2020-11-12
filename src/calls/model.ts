@@ -178,10 +178,7 @@ class CallItemDataProvider implements vscode.TreeDataProvider<CallItem> {
 			title: 'Open Call',
 			arguments: [
 				element.item.uri,
-				<vscode.TextDocumentShowOptions>{
-					selection: element.item.selectionRange.with({ end: element.item.selectionRange.start }),
-					preserveFocus: true
-				}
+				<vscode.TextDocumentShowOptions>{ selection: element.item.selectionRange.with({ end: element.item.selectionRange.start }) }
 			]
 		};
 		item.collapsibleState = vscode.TreeItemCollapsibleState.Collapsed;

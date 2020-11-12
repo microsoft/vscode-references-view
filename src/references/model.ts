@@ -292,10 +292,7 @@ class ReferencesTreeDataProvider implements Required<vscode.TreeDataProvider<Fil
 				title: 'Open Reference',
 				arguments: [
 					element.location.uri,
-					<vscode.TextDocumentShowOptions>{
-						selection: range.with({ end: range.start }),
-						preserveFocus: true
-					}
+					<vscode.TextDocumentShowOptions>{ selection: range.with({ end: range.start }) }
 				]
 			};
 			return result;
