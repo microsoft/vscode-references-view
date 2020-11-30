@@ -247,7 +247,7 @@ export class ReferencesModel implements SymbolItemNavigation<FileItem | Referenc
 
 }
 
-class ReferencesTreeDataProvider implements Required<vscode.TreeDataProvider<FileItem | ReferenceItem>>{
+class ReferencesTreeDataProvider implements vscode.TreeDataProvider<FileItem | ReferenceItem>{
 
 	private readonly _listener: vscode.Disposable;
 	private readonly _onDidChange = new vscode.EventEmitter<FileItem | ReferenceItem | undefined>();
@@ -255,7 +255,7 @@ class ReferencesTreeDataProvider implements Required<vscode.TreeDataProvider<Fil
 	readonly onDidChangeTreeData = this._onDidChange.event;
 
 	constructor(private readonly _model: ReferencesModel) {
-		this._listener = _model.onDidChangeTreeData(e => this._onDidChange.fire());
+		this._listener = _model.onDidChangeTreeData(e => this._onDidChange.fire(undefined));
 	}
 
 	dispose(): void {
@@ -284,7 +284,7 @@ class ReferencesTreeDataProvider implements Required<vscode.TreeDataProvider<Fil
 				highlights: [[before.length, before.length + inside.length]]
 			};
 
-			const result = new vscode.TreeItem2(label);
+			const result = new vscode.TreeItem(label);
 			result.collapsibleState = vscode.TreeItemCollapsibleState.None;
 			result.contextValue = 'reference-item';
 			result.command = {

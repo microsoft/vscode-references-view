@@ -206,6 +206,6 @@ class CallItemDataProvider implements vscode.TreeDataProvider<CallItem> {
 
 	private static _getThemeIcon(kind: vscode.SymbolKind): vscode.ThemeIcon | undefined {
 		let id = CallItemDataProvider._themeIconIds[kind];
-		return id && new vscode.ThemeIcon(id);
+		return id ? new vscode.ThemeIcon(id) : undefined;
 	}
 }

@@ -143,7 +143,7 @@ class TreeDataProviderDelegate implements vscode.TreeDataProvider<undefined> {
 		this._sessionDispoables?.dispose();
 		this._sessionDispoables = undefined;
 
-		this._onDidChange.fire();
+		this._onDidChange.fire(undefined);
 
 		this.provider = provider;
 
