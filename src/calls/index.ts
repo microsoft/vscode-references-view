@@ -25,7 +25,7 @@ export function register(tree: SymbolsTree, context: vscode.ExtensionContext): v
 		let newInput: CallsTreeInput | undefined;
 		const oldInput = tree.getInput();
 		if (anchor instanceof CallItem) {
-			newInput = new CallsTreeInput(new vscode.Location(anchor.item.uri, anchor.item.range.start), direction.value);
+			newInput = new CallsTreeInput(new vscode.Location(anchor.item.uri, anchor.item.selectionRange.start), direction.value);
 		} else if (oldInput instanceof CallsTreeInput) {
 			newInput = new CallsTreeInput(oldInput.location, direction.value);
 		}
