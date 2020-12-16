@@ -50,7 +50,7 @@
       "activitybar": [
         {
           "id": "references-view",
-          "icon": "./media/container-icon.svg",
+          "icon": "$(references)",
           "title": "References"
         }
       ]
