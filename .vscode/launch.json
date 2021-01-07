@@ -25,7 +25,7 @@
             "outFiles": [
                 "${workspaceFolder}/dist/**/*.js"
             ],
-            "preLaunchTask": "npm: watch"
+            "preLaunchTask": "npm: bundle"
         }
     ]
 }

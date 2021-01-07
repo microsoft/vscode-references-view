@@ -5,19 +5,10 @@
     "tasks": [
         {
             "type": "npm",
-            "script": "watch",
-            "presentation": {
-                "echo": true,
-                "reveal": "never",
-                "focus": false,
-                "panel": "shared",
-                "showReuseMessage": true,
-                "clear": false
-            },
-            "problemMatcher": [
-                "$ts-webpack-watch"
-            ],
-            "isBackground": true
+            "script": "bundle",
+            "problemMatcher": [],
+            "label": "npm: bundle",
+            "detail": "esbuild src/extension.ts --bundle --outdir=dist --external:vscode --platform=node --target=node12.18 --minify --sourcemap"
         }
     ]
 }
