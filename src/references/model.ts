@@ -70,7 +70,13 @@ export class ReferencesModel implements SymbolItemNavigation<FileItem | Referenc
 				last = new FileItem(loc.uri.with({ fragment: '' }), [], this);
 				this.items.push(last);
 			}
-			last.references.push(new ReferenceItem(loc, last));
+
+			const lastReferenceInFile: ReferenceItem|undefined = last.references[last.references.length - 1];
+			// Because the locations are sorted first, we can check if there is a duplicate reference by simply comparing 
+			// the current item to the last reference pushed to the `FileItem`.
+			if (!lastReferenceInFile || ReferencesModel._compareLocations(item, lastReferenceInFile.location) !== 0) {
+				last.references.push(new ReferenceItem(loc, last));
+			}
 		}
 	}
 
