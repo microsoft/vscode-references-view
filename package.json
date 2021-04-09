@@ -8,6 +8,9 @@
   "engines": {
     "vscode": "^1.40.0"
   },
+  "workspaceTrust": {
+    "request": "never"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/Microsoft/vscode-reference-view"
