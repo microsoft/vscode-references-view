@@ -8,8 +8,11 @@
   "engines": {
     "vscode": "^1.40.0"
   },
-  "workspaceTrust": {
-    "request": "never"
+  "capabilities": {
+    "virtualWorkspaces": true,
+    "untrustedWorkspaces": {
+      "supported": true
+    }
   },
   "repository": {
     "type": "git",
