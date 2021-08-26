@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput } from '../references-view';
-import { del, tail } from '../utils';
+import { del, getThemeIcon, tail } from '../utils';
 
 
 export class CallsTreeInput implements SymbolTreeInput<CallItem> {
@@ -172,7 +172,7 @@ class CallItemDataProvider implements vscode.TreeDataProvider<CallItem> {
 		const item = new vscode.TreeItem(element.item.name);
 		item.description = element.item.detail;
 		item.contextValue = 'call-item';
-		item.iconPath = CallItemDataProvider._getThemeIcon(element.item.kind);
+		item.iconPath = getThemeIcon(element.item.kind);
 		item.command = {
 			command: 'vscode.open',
 			title: 'Open Call',
@@ -193,19 +193,5 @@ class CallItemDataProvider implements vscode.TreeDataProvider<CallItem> {
 
 	getParent(element: CallItem) {
 		return element.parent;
-	}
-
-	// vscode.SymbolKind.File === 0, Module === 1, etc...
-	private static _themeIconIds = [
-		'symbol-file', 'symbol-module', 'symbol-namespace', 'symbol-package', 'symbol-class', 'symbol-method',
-		'symbol-property', 'symbol-field', 'symbol-constructor', 'symbol-enum', 'symbol-interface',
-		'symbol-function', 'symbol-variable', 'symbol-constant', 'symbol-string', 'symbol-number', 'symbol-boolean',
-		'symbol-array', 'symbol-object', 'symbol-key', 'symbol-null', 'symbol-enum-member', 'symbol-struct',
-		'symbol-event', 'symbol-operator', 'symbol-type-parameter'
-	];
-
-	private static _getThemeIcon(kind: vscode.SymbolKind): vscode.ThemeIcon | undefined {
-		let id = CallItemDataProvider._themeIconIds[kind];
-		return id ? new vscode.ThemeIcon(id) : undefined;
 	}
 }
