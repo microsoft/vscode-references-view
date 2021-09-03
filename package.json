@@ -166,7 +166,7 @@
       },
       {
         "command": "references-view.showSupertypes",
-        "title": "Show Super Types",
+        "title": "Show Supertypes",
         "category": "Types",
         "icon": "$(type-hierarchy-super)"
       },

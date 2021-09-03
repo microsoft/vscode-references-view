@@ -18,7 +18,7 @@ export class TypesTreeInput implements SymbolTreeInput<TypeItem> {
 		readonly direction: TypeHierarchyDirection,
 	) {
 		this.title = direction === TypeHierarchyDirection.Supertypes
-			? 'Super Types Of'
+			? 'Supertypes Of'
 			: 'Subtypes Of';
 	}
 
