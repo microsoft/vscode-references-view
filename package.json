@@ -29,6 +29,7 @@
     "onCommand:references-view.findReferences",
     "onCommand:references-view.findImplementations",
     "onCommand:references-view.showCallHierarchy",
+    "onCommand:references-view.showTypeHierarchy",
     "onCommand:editor.action.showReferences",
     "onView:references-view.tree"
   ],
@@ -157,6 +158,28 @@
         "command": "references-view.prev",
         "title": "Go to Previous Reference",
         "enablement": "references-view.canNavigate"
+      },
+      {
+        "command": "references-view.showTypeHierarchy",
+        "title": "Show Type Hierarchy",
+        "category": "Types"
+      },
+      {
+        "command": "references-view.showSupertypes",
+        "title": "Show Supertypes",
+        "category": "Types",
+        "icon": "$(type-hierarchy-super)"
+      },
+      {
+        "command": "references-view.showSubtypes",
+        "title": "Show Subtypes",
+        "category": "Types",
+        "icon": "$(type-hierarchy-sub)"
+      },
+      {
+        "command": "references-view.removeTypeItem",
+        "title": "Dismiss",
+        "icon": "$(close)"
       }
     ],
     "menus": {
@@ -175,6 +198,11 @@
           "command": "references-view.showCallHierarchy",
           "when": "editorHasCallHierarchyProvider",
           "group": "0_navigation@3"
+        },
+        {
+          "command": "references-view.showTypeHierarchy",
+          "when": "editorHasTypeHierarchyProvider",
+          "group": "0_navigation@4"
         }
       ],
       "view/title": [
@@ -202,6 +230,16 @@
           "command": "references-view.showIncomingCalls",
           "group": "navigation@1",
           "when": "view == references-view.tree && reference-list.hasResult && reference-list.source == callHierarchy &&  references-view.callHierarchyMode == showOutgoing"
+        },
+        {
+          "command": "references-view.showSupertypes",
+          "group": "navigation@1",
+          "when": "view == references-view.tree && reference-list.hasResult && reference-list.source == typeHierarchy &&  references-view.typeHierarchyMode != supertypes"
+        },
+        {
+          "command": "references-view.showSubtypes",
+          "group": "navigation@1",
+          "when": "view == references-view.tree && reference-list.hasResult && reference-list.source == typeHierarchy &&  references-view.typeHierarchyMode != subtypes"
         }
       ],
       "view/item/context": [
@@ -214,6 +252,11 @@
           "command": "references-view.removeCallItem",
           "group": "inline",
           "when": "view == references-view.tree && viewItem == call-item"
+        },
+        {
+          "command": "references-view.removeTypeItem",
+          "group": "inline",
+          "when": "view == references-view.tree && viewItem == type-item"
         },
         {
           "command": "references-view.refind",
@@ -229,6 +272,11 @@
           "command": "references-view.removeCallItem",
           "group": "1",
           "when": "view == references-view.tree && viewItem == call-item"
+        },
+        {
+          "command": "references-view.removeTypeItem",
+          "group": "1",
+          "when": "view == references-view.tree && viewItem == type-item"
         },
         {
           "command": "references-view.refind",
@@ -259,6 +307,16 @@
           "command": "references-view.showIncomingCalls",
           "group": "1",
           "when": "view == references-view.tree && viewItem == call-item"
+        },
+        {
+          "command": "references-view.showSupertypes",
+          "group": "1",
+          "when": "view == references-view.tree && viewItem == type-item"
+        },
+        {
+          "command": "references-view.showSubtypes",
+          "group": "1",
+          "when": "view == references-view.tree && viewItem == type-item"
         }
       ],
       "commandPalette": [
@@ -268,6 +326,10 @@
         },
         {
           "command": "references-view.removeCallItem",
+          "when": "never"
+        },
+        {
+          "command": "references-view.removeTypeItem",
           "when": "never"
         },
         {
