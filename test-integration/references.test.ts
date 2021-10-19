@@ -10,7 +10,9 @@ suite('API ', () => {
 
 	test('stub', async function () {
 		const apiObject = await vscode.extensions.getExtension('ms-vscode.references-view')?.activate();
-		assert.strictEqual(apiObject, undefined);
+		assert.strictEqual(typeof apiObject, 'object');
+		assert.strictEqual(typeof apiObject.setInput, 'function');
+		assert.strictEqual(apiObject.setInput.length, 1);
 	});
 
 });
