@@ -407,7 +407,8 @@
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "bundle": "esbuild src/extension.ts --bundle --outdir=dist --external:vscode --platform=node --target=node12.18 --minify --sourcemap",
     "ts-compile": "tsc -p tsconfig.json",
-    "integration-test": "npm run ts-compile && node ./out/test-integration/runTest.js"
+    "integration-test": "npm run ts-compile && node ./out/test-integration/runTest.js",
+    "deploy": "npx vsce publish"
   },
   "devDependencies": {
     "@types/glob": "^7.1.1",
