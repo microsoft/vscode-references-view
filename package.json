@@ -16,10 +16,10 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/Microsoft/vscode-reference-view"
+    "url": "https://github.com/Microsoft/vscode-references-view"
   },
   "bugs": {
-    "url": "https://github.com/Microsoft/vscode-reference-view/issues"
+    "url": "https://github.com/Microsoft/vscode-references-view/issues"
   },
   "categories": [
     "Programming Languages"
