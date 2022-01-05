@@ -1,3 +1,5 @@
+[![Build Status](https://dev.azure.com/monacotools/Monaco/_apis/build/status/microsoft.vscode-references-view?branchName=main)](https://dev.azure.com/monacotools/Monaco/_build/latest?definitionId=245&branchName=main)
+
 # References View
 
 This extension shows reference search results as separate view, just like search results. It complements the peek view presentation that is also built into VS Code. The following feature are available:
