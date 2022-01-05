@@ -20,15 +20,9 @@ steps:
   displayName: 'Install Node.js'
 
 - bash: |
-    /usr/bin/Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
-    echo ">>> Started xvfb"
-  displayName: Start xvfb
-  condition: and(succeeded(), eq(variables['Agent.OS'], 'Linux'))
-
-- bash: |
-    echo ">>> Compile, unit-test, integration-test"
+    echo ">>> Typecheck"
     npm i && npm run typecheck
-  displayName: Compile, Lint, Test
+  displayName: Typecheck
   env:
     DISPLAY: ':99.0'
 
