@@ -1,33 +1,23 @@
+name: $(Date:yyyyMMdd)$(Rev:.r)
+
 trigger:
   branches:
-    include: ['*']
+    include: ["*"]
   tags:
-    include: ['*']
+    include: ["*"]
+pr: none
 
-strategy:
-  matrix:
-    linux:
-      imageName: 'ubuntu-latest'
+resources:
+  repositories:
+    - repository: templates
+      type: github
+      name: microsoft/vscode-engineering
+      ref: main
+      endpoint: Monaco
 
-pool:
-  vmImage: $(imageName)
-
-steps:
-
-- task: NodeTool@0
-  inputs:
-    versionSpec: '14.x'
-  displayName: 'Install Node.js'
-
-- bash: |
-    echo ">>> Typecheck"
-    npm i && npm run typecheck
-  displayName: Typecheck
-  env:
-    DISPLAY: ':99.0'
-
-- bash: |
-    echo ">>> Publish"
-    npm run deploy -- -p $(VSCODE_MARKETPLACE_TOKEN)
-  displayName: Publish
-  condition: and(succeeded(), startsWith(variables['Build.SourceBranch'], 'refs/tags/'))
+extends:
+  template: azure-pipelines/extension/stable.yml@templates
+  parameters:
+    buildSteps:
+      - scripts: npm install -ci
+        displayName: Install dependencies
