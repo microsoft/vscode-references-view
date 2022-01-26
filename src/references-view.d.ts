@@ -100,6 +100,11 @@ export interface SymbolTreeModel<T> {
 	highlights?: SymbolItemEditorHighlights<T>;
 
 	/**
+	 * Optional support for drag and drop.
+	 */
+	uris?: SymbolItemUri<T>;
+
+	/**
 	 * Optional dispose function which is invoked when this model is
 	 * needed anymore
 	 */
@@ -136,4 +141,9 @@ export interface SymbolItemEditorHighlights<T> {
 	 * Given an item and an uri return an array of ranges to highlight.
 	 */
 	getEditorHighlights(item: T, uri: vscode.Uri): vscode.Range[] | undefined;
+}
+
+export interface SymbolItemUri<T> {
+
+	getUri(item: T): vscode.Uri | undefined;
 }

@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import { EditorHighlights } from './highlights';
 import { Navigation } from './navigation';
-import { SymbolTreeInput } from './references-view';
+import { SymbolItemUri, SymbolTreeInput } from './references-view';
 import { ContextKey, isValidRequestPosition, WordAnchor } from './utils';
 
 export class SymbolsTree {
@@ -19,6 +19,7 @@ export class SymbolsTree {
 
 	private readonly _history = new TreeInputHistory(this);
 	private readonly _provider = new TreeDataProviderDelegate();
+	private readonly _dnd = new TreeDndDelegate();
 	private readonly _tree: vscode.TreeView<unknown>;
 	private readonly _navigation: Navigation;
 
@@ -28,7 +29,8 @@ export class SymbolsTree {
 	constructor() {
 		this._tree = vscode.window.createTreeView<unknown>(this.viewId, {
 			treeDataProvider: this._provider,
-			showCollapseAll: true
+			showCollapseAll: true,
+			dragAndDropController: this._dnd
 		});
 		this._navigation = new Navigation(this._tree);
 	}
@@ -66,6 +68,7 @@ export class SymbolsTree {
 
 		// set promise to tree data provider to trigger tree loading UI
 		this._provider.update(modelPromise.then(model => model?.provider ?? this._history));
+		this._dnd.update(modelPromise.then(model => model?.uris));
 
 		const model = await modelPromise;
 		if (this._input !== input) {
@@ -177,6 +180,39 @@ class TreeDataProviderDelegate implements vscode.TreeDataProvider<undefined> {
 		if (!this.provider) {
 			throw new Error('MISSING provider');
 		}
+	}
+}
+
+// --- tree dnd
+
+class TreeDndDelegate implements vscode.TreeDragAndDropController<undefined> {
+
+	private _delegate: SymbolItemUri<undefined> | undefined;
+
+	readonly supportedMimeTypes: string[] = ['resourceurls'];
+
+	update(delegate: Promise<SymbolItemUri<unknown> | undefined>) {
+		this._delegate = undefined;
+		delegate.then(value => this._delegate = value);
+	}
+
+	handleDrag(source: undefined[], data: vscode.TreeDataTransfer) {
+		if (this._delegate) {
+			const urls: string[] = [];
+			for (let item of source) {
+				const uri = this._delegate.getUri(item);
+				if (uri) {
+					urls.push(uri.toString());
+				}
+			}
+			if (urls.length > 0) {
+				data.set('resourceurls', new vscode.TreeDataTransferItem(urls));
+			}
+		}
+	}
+
+	handleDrop(source: vscode.TreeDataTransfer<vscode.TreeDataTransferItem>, target: undefined): void | Thenable<void> {
+
 	}
 }
 
