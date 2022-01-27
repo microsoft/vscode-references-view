@@ -6,7 +6,7 @@
 import * as vscode from 'vscode';
 import { EditorHighlights } from './highlights';
 import { Navigation } from './navigation';
-import { SymbolItemUri, SymbolTreeInput } from './references-view';
+import { SymbolItemDragAndDrop, SymbolTreeInput } from './references-view';
 import { ContextKey, isValidRequestPosition, WordAnchor } from './utils';
 
 export class SymbolsTree {
@@ -68,7 +68,7 @@ export class SymbolsTree {
 
 		// set promise to tree data provider to trigger tree loading UI
 		this._provider.update(modelPromise.then(model => model?.provider ?? this._history));
-		this._dnd.update(modelPromise.then(model => model?.uris));
+		this._dnd.update(modelPromise.then(model => model?.dnd));
 
 		const model = await modelPromise;
 		if (this._input !== input) {
@@ -187,11 +187,11 @@ class TreeDataProviderDelegate implements vscode.TreeDataProvider<undefined> {
 
 class TreeDndDelegate implements vscode.TreeDragAndDropController<undefined> {
 
-	private _delegate: SymbolItemUri<undefined> | undefined;
+	private _delegate: SymbolItemDragAndDrop<undefined> | undefined;
 
 	readonly supportedMimeTypes: string[] = ['resourceurls'];
 
-	update(delegate: Promise<SymbolItemUri<unknown> | undefined>) {
+	update(delegate: Promise<SymbolItemDragAndDrop<unknown> | undefined>) {
 		this._delegate = undefined;
 		delegate.then(value => this._delegate = value);
 	}
@@ -200,7 +200,7 @@ class TreeDndDelegate implements vscode.TreeDragAndDropController<undefined> {
 		if (this._delegate) {
 			const urls: string[] = [];
 			for (let item of source) {
-				const uri = this._delegate.getUri(item);
+				const uri = this._delegate.getDragUri(item);
 				if (uri) {
 					urls.push(uri.toString());
 				}

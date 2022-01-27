@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput } from '../references-view';
+import { SymbolItemDragAndDrop, SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput } from '../references-view';
 import { del, getThemeIcon, tail } from '../utils';
 
 
@@ -37,6 +37,7 @@ export class CallsTreeInput implements SymbolTreeInput<CallItem> {
 			get message() { return model.roots.length === 0 ? 'No results.' : undefined; },
 			navigation: model,
 			highlights: model,
+			dnd: model,
 			dispose() {
 				provider.dispose();
 			}
@@ -72,7 +73,7 @@ export class CallItem {
 	}
 }
 
-class CallsModel implements SymbolItemNavigation<CallItem>, SymbolItemEditorHighlights<CallItem> {
+class CallsModel implements SymbolItemNavigation<CallItem>, SymbolItemEditorHighlights<CallItem>, SymbolItemDragAndDrop<CallItem> {
 
 	readonly roots: CallItem[] = [];
 
@@ -128,6 +129,12 @@ class CallsModel implements SymbolItemNavigation<CallItem>, SymbolItemEditorHigh
 			const delta = fwd ? 1 : -1;
 			return array[idx + delta + array.length % array.length];
 		}
+	}
+
+	// --- dnd
+
+	getDragUri(item: CallItem): vscode.Uri | undefined {
+		return item.item.uri.with({ fragment: `L${1 + item.item.range.start.line},${item.item.range.start.character}` });
 	}
 
 	// --- highlights

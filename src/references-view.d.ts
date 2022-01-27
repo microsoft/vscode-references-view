@@ -102,7 +102,7 @@ export interface SymbolTreeModel<T> {
 	/**
 	 * Optional support for drag and drop.
 	 */
-	uris?: SymbolItemUri<T>;
+	dnd?: SymbolItemDragAndDrop<T>;
 
 	/**
 	 * Optional dispose function which is invoked when this model is
@@ -143,7 +143,7 @@ export interface SymbolItemEditorHighlights<T> {
 	getEditorHighlights(item: T, uri: vscode.Uri): vscode.Range[] | undefined;
 }
 
-export interface SymbolItemUri<T> {
+export interface SymbolItemDragAndDrop<T> {
 
-	getUri(item: T): vscode.Uri | undefined;
+	getDragUri(item: T): vscode.Uri | undefined;
 }

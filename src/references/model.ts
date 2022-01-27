@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { SymbolItemEditorHighlights, SymbolItemNavigation, SymbolItemUri, SymbolTreeInput, SymbolTreeModel } from '../references-view';
+import { SymbolItemDragAndDrop, SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput, SymbolTreeModel } from '../references-view';
 import { del, getPreviewChunks, tail } from '../utils';
 
 export class ReferencesTreeInput implements SymbolTreeInput<FileItem | ReferenceItem> {
@@ -41,7 +41,7 @@ export class ReferencesTreeInput implements SymbolTreeInput<FileItem | Reference
 			get message() { return model.message; },
 			navigation: model,
 			highlights: model,
-			uris: model,
+			dnd: model,
 			dispose(): void {
 				provider.dispose();
 			}
@@ -53,7 +53,7 @@ export class ReferencesTreeInput implements SymbolTreeInput<FileItem | Reference
 	}
 }
 
-export class ReferencesModel implements SymbolItemNavigation<FileItem | ReferenceItem>, SymbolItemEditorHighlights<FileItem | ReferenceItem>, SymbolItemUri<FileItem | ReferenceItem> {
+export class ReferencesModel implements SymbolItemNavigation<FileItem | ReferenceItem>, SymbolItemEditorHighlights<FileItem | ReferenceItem>, SymbolItemDragAndDrop<FileItem | ReferenceItem> {
 
 	private _onDidChange = new vscode.EventEmitter<FileItem | ReferenceItem | undefined>();
 	readonly onDidChangeTreeData = this._onDidChange.event;
@@ -246,11 +246,13 @@ export class ReferencesModel implements SymbolItemNavigation<FileItem | Referenc
 		return result;
 	}
 
-	getUri(item: FileItem | ReferenceItem): vscode.Uri | undefined {
+	getDragUri(item: FileItem | ReferenceItem): vscode.Uri | undefined {
 		if (item instanceof FileItem) {
 			return item.uri;
 		} else {
-			return item.file.uri.with({ fragment: `L${item.location.range.start.line + 1},${item.location.range.start.character + 1}` });
+			return item.file.uri.with({
+				fragment: `L${item.location.range.start.line + 1},${item.location.range.start.character + 1}`
+			});
 		}
 	}
 }

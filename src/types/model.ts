@@ -4,7 +4,7 @@
  *--------------------------------------------------------------------------------------------*/
 
 import * as vscode from 'vscode';
-import { SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput } from '../references-view';
+import { SymbolItemDragAndDrop, SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput } from '../references-view';
 import { del, getThemeIcon, tail } from '../utils';
 
 
@@ -37,6 +37,7 @@ export class TypesTreeInput implements SymbolTreeInput<TypeItem> {
 			get message() { return model.roots.length === 0 ? 'No results.' : undefined; },
 			navigation: model,
 			highlights: model,
+			dnd: model,
 			dispose() {
 				provider.dispose();
 			}
@@ -70,7 +71,7 @@ export class TypeItem {
 	}
 }
 
-class TypesModel implements SymbolItemNavigation<TypeItem>, SymbolItemEditorHighlights<TypeItem> {
+class TypesModel implements SymbolItemNavigation<TypeItem>, SymbolItemEditorHighlights<TypeItem>, SymbolItemDragAndDrop<TypeItem> {
 
 	readonly roots: TypeItem[] = [];
 
@@ -84,10 +85,10 @@ class TypesModel implements SymbolItemNavigation<TypeItem>, SymbolItemEditorHigh
 	private async _resolveTypes(currentType: TypeItem): Promise<TypeItem[]> {
 		if (this.direction === TypeHierarchyDirection.Supertypes) {
 			const types = await vscode.commands.executeCommand<vscode.TypeHierarchyItem[]>('vscode.provideSupertypes', currentType.item);
-			return types ? types.map(item => new TypeItem(this, item, currentType )) : [];
+			return types ? types.map(item => new TypeItem(this, item, currentType)) : [];
 		} else {
 			const types = await vscode.commands.executeCommand<vscode.TypeHierarchyItem[]>('vscode.provideSubtypes', currentType.item);
-			return types ? types.map(item => new TypeItem(this, item, currentType )) : [];
+			return types ? types.map(item => new TypeItem(this, item, currentType)) : [];
 		}
 	}
 
@@ -96,6 +97,12 @@ class TypesModel implements SymbolItemNavigation<TypeItem>, SymbolItemEditorHigh
 			item.children = await this._resolveTypes(item);
 		}
 		return item.children;
+	}
+
+	// -- dnd
+
+	getDragUri(item: TypeItem): vscode.Uri | undefined {
+		return item.item.uri.with({ fragment: `L${1 + item.item.range.start.line},${1 + item.item.range.start.character}` });
 	}
 
 	// -- navigation 
