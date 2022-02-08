@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { SymbolItemDragAndDrop, SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput, SymbolTreeModel } from '../references-view';
-import { del, getPreviewChunks, tail } from '../utils';
+import { asResourceUrl, del, getPreviewChunks, tail } from '../utils';
 
 export class ReferencesTreeInput implements SymbolTreeInput<FileItem | ReferenceItem> {
 
@@ -250,9 +250,7 @@ export class ReferencesModel implements SymbolItemNavigation<FileItem | Referenc
 		if (item instanceof FileItem) {
 			return item.uri;
 		} else {
-			return item.file.uri.with({
-				fragment: `L${item.location.range.start.line + 1},${item.location.range.start.character + 1}`
-			});
+			return asResourceUrl(item.file.uri, item.location.range);
 		}
 	}
 }

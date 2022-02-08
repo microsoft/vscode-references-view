@@ -16,6 +16,10 @@ export function tail<T>(array: T[]): T | undefined {
 	return array[array.length - 1];
 }
 
+export function asResourceUrl(uri: vscode.Uri, range: vscode.Range): vscode.Uri {
+	return uri.with({ fragment: `L${1 + range.start.line},${1 + range.start.character}-${range.end.line},${range.end.character}` });
+}
+
 export async function isValidRequestPosition(uri: vscode.Uri, position: vscode.Position) {
 	const doc = await vscode.workspace.openTextDocument(uri);
 	let range = doc.getWordRangeAtPosition(position);

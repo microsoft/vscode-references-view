@@ -189,7 +189,9 @@ class TreeDndDelegate implements vscode.TreeDragAndDropController<undefined> {
 
 	private _delegate: SymbolItemDragAndDrop<undefined> | undefined;
 
-	readonly supportedMimeTypes: string[] = ['resourceurls'];
+	readonly dropMimeTypes: string[] = [];
+
+	readonly dragMimeTypes: string[] = ['resourceurls'];
 
 	update(delegate: Promise<SymbolItemDragAndDrop<unknown> | undefined>) {
 		this._delegate = undefined;

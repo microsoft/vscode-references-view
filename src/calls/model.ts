@@ -5,7 +5,7 @@
 
 import * as vscode from 'vscode';
 import { SymbolItemDragAndDrop, SymbolItemEditorHighlights, SymbolItemNavigation, SymbolTreeInput } from '../references-view';
-import { del, getThemeIcon, tail } from '../utils';
+import { asResourceUrl, del, getThemeIcon, tail } from '../utils';
 
 
 export class CallsTreeInput implements SymbolTreeInput<CallItem> {
@@ -134,7 +134,7 @@ class CallsModel implements SymbolItemNavigation<CallItem>, SymbolItemEditorHigh
 	// --- dnd
 
 	getDragUri(item: CallItem): vscode.Uri | undefined {
-		return item.item.uri.with({ fragment: `L${1 + item.item.range.start.line},${item.item.range.start.character}` });
+		return asResourceUrl(item.item.uri, item.item.range);
 	}
 
 	// --- highlights
