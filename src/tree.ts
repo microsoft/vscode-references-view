@@ -191,7 +191,7 @@ class TreeDndDelegate implements vscode.TreeDragAndDropController<undefined> {
 
 	readonly dropMimeTypes: string[] = [];
 
-	readonly dragMimeTypes: string[] = ['resourceurls'];
+	readonly dragMimeTypes: string[] = ['text/uri-list'];
 
 	update(delegate: Promise<SymbolItemDragAndDrop<unknown> | undefined>) {
 		this._delegate = undefined;
@@ -208,13 +208,13 @@ class TreeDndDelegate implements vscode.TreeDragAndDropController<undefined> {
 				}
 			}
 			if (urls.length > 0) {
-				data.set('resourceurls', new vscode.TreeDataTransferItem(urls));
+				data.set('text/uri-list', new vscode.TreeDataTransferItem(urls.join('\n')));
 			}
 		}
 	}
 
-	handleDrop(source: vscode.TreeDataTransfer<vscode.TreeDataTransferItem>, target: undefined): void | Thenable<void> {
-
+	handleDrop(): void | Thenable<void> {
+		throw new Error('Method not implemented.');
 	}
 }
 
