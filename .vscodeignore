@@ -2,6 +2,7 @@
 .gitignore
 .eslintignore
 .vscode-test
+azure-pipelines.yml
 *.d.ts
 dist/test-integration*
 media/demo.png
