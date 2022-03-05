@@ -6,7 +6,7 @@
   "version": "0.0.85",
   "publisher": "ms-vscode",
   "engines": {
-    "vscode": "^1.40.0"
+    "vscode": "^1.66.0"
   },
   "capabilities": {
     "virtualWorkspaces": true,
@@ -14,9 +14,6 @@
       "supported": true
     }
   },
-  "enabledApiProposals": [
-    "treeViewDragAndDrop"
-  ],
   "repository": {
     "type": "git",
     "url": "https://github.com/Microsoft/vscode-references-view"

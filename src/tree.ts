@@ -198,7 +198,7 @@ class TreeDndDelegate implements vscode.TreeDragAndDropController<undefined> {
 		delegate.then(value => this._delegate = value);
 	}
 
-	handleDrag(source: undefined[], data: vscode.TreeDataTransfer) {
+	handleDrag(source: undefined[], data: vscode.DataTransfer) {
 		if (this._delegate) {
 			const urls: string[] = [];
 			for (let item of source) {
@@ -208,7 +208,7 @@ class TreeDndDelegate implements vscode.TreeDragAndDropController<undefined> {
 				}
 			}
 			if (urls.length > 0) {
-				data.set('text/uri-list', new vscode.TreeDataTransferItem(urls.join('\n')));
+				data.set('text/uri-list', new vscode.DataTransferItem(urls.join('\n')));
 			}
 		}
 	}
