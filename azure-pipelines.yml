@@ -18,6 +18,8 @@ resources:
 extends:
   template: azure-pipelines/extension/stable.yml@templates
   parameters:
+    ghCreateRelease: true
+    ghReleaseAddChangeLog: true
     buildSteps:
       - script: npm install -ci
         displayName: Install dependencies
