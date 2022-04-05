@@ -178,7 +178,7 @@ class CallItemDataProvider implements vscode.TreeDataProvider<CallItem> {
 
 		const item = new vscode.TreeItem(element.item.name);
 		item.description = element.item.detail;
-		item.tooltip = item.label? `${item.label} - ${element.item.detail}` : element.item.detail;
+		item.tooltip = item.label ? `${item.label} - ${element.item.detail}` : element.item.detail;
 		item.contextValue = 'call-item';
 		item.iconPath = getThemeIcon(element.item.kind);
 		item.command = {
