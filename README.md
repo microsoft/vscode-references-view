@@ -1,3 +1,11 @@
+# REPO HAS BEEN MOVED
+
+Note that the sources for the VS Code References View have been moved into the VS Code Repository at: https://github.com/microsoft/vscode/tree/main/extensions/references-view. This repository is now archived and will not be updated anymore.
+
+
+
+
+
 # References View
 
 This extension shows reference search results as separate view, just like search results. It complements the peek view presentation that is also built into VS Code. The following feature are available:
